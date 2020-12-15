@@ -23,9 +23,9 @@ from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('shoppingmall.urls')),
-    path('auth-token/', obtain_jwt_token),
-    path('refresh-token/', refresh_jwt_token),
+    path('v1/', include('shoppingmall.urls')),
+    path('v1/auth-token/', obtain_jwt_token),
+    path('v1/refresh-token/', refresh_jwt_token),
 ]
 urlpatterns += static(settings.MEDIA_URL,
                       document_root=settings.MEDIA_ROOT)
