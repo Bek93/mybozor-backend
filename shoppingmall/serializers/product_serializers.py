@@ -4,7 +4,7 @@ from rest_framework import serializers, fields
 from shoppingmall.models import ProductImages, Product, Localize, Options, OptionValue, DeliveryPolicy, Category
 from shoppingmall.serializers import OptionSerializer, OptionReadSerializer, DeliveryPolicySerializer
 from shoppingmall.serializers.collection_serializers import CollectionAdminSerializer, \
-    LocalizeSerializer, CategorySerializer
+    LocalizeSerializer, CategorySerializer, ReadCategorySerializer
 from shoppingmall.serializers.image_serializers import ProductImageSerializer
 
 
@@ -113,7 +113,7 @@ class ProductReadSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
     collection = CollectionAdminSerializer()
-    category = CategorySerializer()
+    category = ReadCategorySerializer()
     options = serializers.SerializerMethodField()
     delivery_policy = serializers.SerializerMethodField()
 

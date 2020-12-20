@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 
+from django.db import connection
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -30,7 +31,7 @@ conf = {
 
 
 class OrderViewSet(viewsets.ModelViewSet):
-    queryset = Order.objects.all().filter(deleted=False).order_by('-date_created')
+    queryset = Order.objects.all().order_by('-date_created')
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
 
@@ -72,6 +73,47 @@ class OrderViewSet(viewsets.ModelViewSet):
         if user.is_seller():
             obj = self.get_object()
             obj.status = 'C'
+            obj.save()
+            response = OrderSerializer(obj, context=self.get_serializer_context()).data
+            Logger().d(data_string='', method=request.method, path=request.path,
+                       shop_id=0, user_id=user.id, payload_string=response, status_code=200)
+            return Response(response, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": ["Only customer can access"]}, status=status.HTTP_403_FORBIDDEN)
+
+    @action(methods=['post'], detail=True)
+    def delete(self, request, pk=None):
+        user = request.user
+        if user.is_seller():
+            obj = self.get_object()
+            obj.status = 'C'
+            obj.save()
+            response = OrderSerializer(obj, context=self.get_serializer_context()).data
+            Logger().d(data_string='', method=request.method, path=request.path,
+                       shop_id=0, user_id=user.id, payload_string=response, status_code=200)
+            return Response(response, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": ["Only customer can access"]}, status=status.HTTP_403_FORBIDDEN)
+
+    @action(methods=['post'], detail=True)
+    def restore(self, request, pk=None):
+        user = request.user
+        if user.is_seller():
+            obj = self.get_object()
+            obj.deleted = False
+            obj.save()
+            response = OrderSerializer(obj, context=self.get_serializer_context()).data
+            Logger().d(data_string='', method=request.method, path=request.path,
+                       shop_id=0, user_id=user.id, payload_string=response, status_code=200)
+            return Response(response, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": ["Only customer can access"]}, status=status.HTTP_403_FORBIDDEN)
+
+    def destroy(self, request, *args, **kwargs):
+        user = request.user
+        if user.is_seller():
+            obj = self.get_object()
+            obj.deleted = True
             obj.save()
             response = OrderSerializer(obj, context=self.get_serializer_context()).data
             Logger().d(data_string='', method=request.method, path=request.path,
@@ -205,7 +247,10 @@ class OrderViewSet(viewsets.ModelViewSet):
                 if 'status' in query_params:
                     statusOrder = query_params['status']
 
-                queryset = Order.objects.filter(shop=shopId)
+                deleted = False
+                if 'deleted' in query_params:
+                    deleted = query_params['deleted']
+                queryset = Order.objects.filter(shop=shopId, deleted=deleted)
                 if from_date and to_date:
                     queryset = queryset.filter(date_created__date__range=[from_date, to_date])
                 if payment:
@@ -233,11 +278,11 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response(response, status=status.HTTP_403_FORBIDDEN)
 
     @action(methods=['post'], detail=True)
-    def approve(self, request, pk=None):
+    def accept(self, request, pk=None):
         if request.user.is_seller():
             obj = self.get_object()
             obj.status = 'A'
-            obj.posting_date = self.getDeliveryDate()
+            obj.delivery = 'P'
             obj.save()
             try:
                 obj_ser = OrderSerializer(obj, context=self.get_serializer_context()).data
@@ -261,7 +306,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             except Exception as ex:
                 print(ex)
                 pass
-            return Response({"Approved"}, status=status.HTTP_200_OK)
+            return Response({"Accepted"}, status=status.HTTP_200_OK)
         else:
             return Response({"error": ["Only admins have this rights"]}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
@@ -311,9 +356,57 @@ class OrderViewSet(viewsets.ModelViewSet):
         else:
             return Response({"error": ["Only admins have this rights"]}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
+    @action(methods=['get'], detail=False)
+    def overview(self, request, pk=None):
+        if request.user.is_seller():
+            query_params = request.query_params
+            if 'shopId' in query_params:
+                query = f"""SELECT count(*), status from shoppingmall_order \
+                where shop_id = '{query_params['shopId']}' group by status;"""
+                with connection.cursor() as cursor:
+                    cursor.execute(query)
+                    response = cursor.fetchall()
+                quantity = []
+                datas = {}
+                data = {}
+                for res in response:
+
+                    if res[1] == 'P':
+                        data['pending'] = res[0]
+
+                    if res[1] == 'A':
+                        data['accept'] = res[0]
+
+                datas["status"] = data
+
+                query = f"""SELECT count(*), delivery from shoppingmall_order\
+                    where shop_id ='{query_params['shopId']}' and status='A' group by delivery;
+                                                       """
+                with connection.cursor() as cursor:
+                    cursor.execute(query)
+                    response = cursor.fetchall()
+
+                data = {}
+                for res in response:
+                    if res[1] == 'P':
+                        data['preparing'] = res[0]
+
+                    if res[1] == 'S':
+                        data['sent'] = res[0]
+                datas["delivery"] = data
+
+                return Response(datas, status=status.HTTP_200_OK)
+            else:
+                data = {
+                    "shopId": "Please sent the fields..."
+                }
+                return Response(data, status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            return Response({"error": ["Only admins have this rights"]}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
     @action(methods=['post'], detail=True)
     def sent(self, request, pk=None):
-        if request.user.is_staff:
+        if request.user.is_seller():
             obj = self.get_object()
             obj.status = 'S'
             todayDataTime = datetime.datetime.now(seoul)
@@ -331,8 +424,81 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response({"error": ["Only admins have this rights"]}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
     @action(methods=['post'], detail=True)
+    def delivery(self, request, pk=None):
+        user = request.user
+        if request.user.is_seller():
+            obj = self.get_object()
+            data = request.data
+            if 'posting_date' in data:
+                obj.posting_date = data['posting_date']
+
+            if 'post_code' in data:
+                obj.post_code = data['post_code']
+
+            if 'shipping_date' in data:
+                obj.shipping_date = data['shipping_date']
+
+            if 'delivery_comment' in data:
+                obj.delivery_comment = data['delivery_comment']
+            obj.save()
+
+            serializer = OrderSerializer(obj, context=self.get_serializer_context())
+            response = serializer.data
+            Logger().d(data_string=data, method=request.method, path=request.path,
+                       shop_id=response['shop'], user_id=user.id, payload_string=response, status_code=200)
+            return Response(response)
+        else:
+            return Response({"error": ["Only admins have this rights"]}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+    @action(methods=['post'], detail=True)
+    def customer(self, request, pk=None):
+        user = request.user
+        if request.user.is_seller():
+            obj = self.get_object()
+            data = request.data
+            if 'name' in data:
+                obj.name = data['name']
+
+            if 'phone' in data:
+                obj.phone = data['phone']
+
+            if 'address' in data:
+                obj.address = data['address']
+
+            obj.save()
+
+            serializer = OrderSerializer(obj, context=self.get_serializer_context())
+            response = serializer.data
+            Logger().d(data_string=data, method=request.method, path=request.path,
+                       shop_id=response['shop'], user_id=user.id, payload_string=response, status_code=200)
+            return Response(response)
+        else:
+            return Response({"error": ["Only admins have this rights"]}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+    @action(methods=['post'], detail=True)
+    def info(self, request, pk=None):
+        user = request.user
+        if request.user.is_seller():
+            obj = self.get_object()
+            data = request.data
+            if 'status' in data:
+                obj.status = data['status']
+
+            if 'payment' in data:
+                obj.payment = data['payment']
+
+            obj.save()
+            serializer = OrderSerializer(obj, context=self.get_serializer_context())
+            response = serializer.data
+            Logger().d(data_string=data, method=request.method, path=request.path,
+                       shop_id=response['shop'], user_id=user.id, payload_string=response, status_code=200)
+            return Response(response)
+        else:
+            return Response({"error": ["Only admins have this rights"]}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+    @action(methods=['post'], detail=True)
     def sent_and_notify(self, request, pk=None):
-        if request.user.is_staff:
+        if request.user.is_seller():
             obj = self.get_object()
             obj.status = 'S'
             todayDataTime = datetime.datetime.now(seoul)

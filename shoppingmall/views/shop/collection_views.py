@@ -30,14 +30,17 @@ class CollectionViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data = request.data
         user = request.user
-        serializer = CollectionSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        response = serializer.data
-        headers = self.get_success_headers(data)
-        Logger().d(data_string=data, method=request.method, path=request.path,
-                   shop_id=response['id'], user_id=user.id, payload_string=response, status_code=201)
-        return Response(data, status=status.HTTP_201_CREATED, headers=headers)
+        if user.is_seller():
+            serializer = CollectionAdminSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            response = serializer.data
+            headers = self.get_success_headers(data)
+            Logger().d(data_string=data, method=request.method, path=request.path,
+                       shop_id=response['id'], user_id=user.id, payload_string=response, status_code=201)
+            return Response(data, status=status.HTTP_201_CREATED, headers=headers)
+        else:
+            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def update(self, request, *args, **kwargs):
         user = request.user
@@ -62,7 +65,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
                     productImageSerializer.is_valid(True)
                     productImageSerializer.save()
 
-            serializer = CollectionSerializer(instance, data=data, partial=partial)
+            serializer = CollectionAdminSerializer(instance, data=data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
             if getattr(instance, '_prefetched_objects_cache', None):

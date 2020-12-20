@@ -8,7 +8,7 @@ from shoppingmall.utils.image_utils import Base64ImageField
 
 
 class CollectionSerializer(serializers.ModelSerializer):
-    title = serializers.SerializerMethodField()
+    titles = LocalizeSerializer()
     images = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
@@ -17,19 +17,8 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        fields = ('id', 'title', 'images', 'date_created')
+        fields = ('id', 'titles', 'images', 'date_created')
         ordering = ['-date_created']
-
-    def get_title(self, obj):
-        title = ""
-        language = self.context.get('language')
-        if language == "uz":
-            title = obj.title_uz
-        elif language == "ru":
-            title = obj.title_ru
-        elif language == "en":
-            title = obj.title_en
-        return title
 
     def get_images(self, obj):
         images = CollectionImages.objects.filter(category=obj.pk)
@@ -75,13 +64,53 @@ class CategorySerializer(serializers.ModelSerializer):
             return CategorySerializer(children, many=True).data
 
 
+class ReadCategorySerializer(serializers.ModelSerializer):
+    titles = LocalizeSerializer()
+    parent = serializers.SerializerMethodField(read_only=True)
+
+    def __init__(self, *args, **kwargs):
+        kwargs['partial'] = True
+        super(ReadCategorySerializer, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Category
+        fields = ('id', 'parent_id', 'parent', 'titles', 'is_active', 'date_created')
+        ordering = ['-date_created']
+
+    def get_titles(self, obj):
+        if obj.titles:
+            titles = Localize.objects.get(id=obj.titles.id)
+            return LocalizeSerializer(titles).data
+
+    def get_parent(self, obj):
+        if obj:
+            if obj.parent_id > 0:
+                parent = Category.objects.get(id=obj.parent_id)
+                return ReadCategorySerializer(parent).data
+
+
 class CollectionAdminSerializer(serializers.ModelSerializer):
-    images = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField(read_only=True)
     titles = LocalizeSerializer()
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
         super(CollectionAdminSerializer, self).__init__(*args, **kwargs)
+
+    def create(self, validated_data):
+
+        if 'titles' in validated_data:
+            titles = validated_data.pop('titles')
+            new_titles = Localize.objects.create(**titles)
+            validated_data['titles_id'] = new_titles.id
+
+        try:
+            collection = Collection.objects.create(**validated_data)
+            collection.save()
+        except ValidationError as err:
+            raise ValidationError(err)
+
+        return collection
 
     class Meta:
         model = Collection
@@ -95,5 +124,5 @@ class CollectionAdminSerializer(serializers.ModelSerializer):
             return LocalizeSerializer(titles).data
 
     def get_images(self, obj):
-        images = CollectionImages.objects.filter(category=obj.pk)
+        images = CollectionImages.objects.filter(collection=obj.pk)
         return CollectionImagesSerializer(images, many=True, context=self.context).data

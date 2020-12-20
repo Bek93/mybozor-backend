@@ -32,15 +32,16 @@ class DashboardViewSet(viewsets.ModelViewSet):
                 monthly_query = f"""SELECT 
                SUM(total_selling)                       as selling,
                SUM(total_buying)                        as buying,
-               (SUM(total_selling) - SUM(total_buying)) as profit, month
-               FROM (SELECT total_selling, total_buying, to_char(date_created, 'YYYY-MM') as month, date_created
+               (SUM(total_selling) - SUM(total_buying)) as profit, SUM(total_referral_fee) as referral_fee, month
+               FROM (SELECT total_selling, total_buying, total_referral_fee, to_char(date_created, 'YYYY-MM') as month, date_created
                from shoppingmall_order where deleted = false and shop_id='{query_params['shopId']}' and status = 'A' OR status = 'S') as orders group by month order by month;
                 """
                 response = self.my_custom_sql(monthly_query)
-                titles = ['selling', 'buying', 'profit', 'month']
+                titles = ['selling', 'buying', 'profit', 'referral_fee', 'month']
                 selling = []
                 buying = []
                 profit = []
+                referral_fee = []
                 month = []
                 for res in response:
                     for i, title in enumerate(titles):
@@ -51,12 +52,15 @@ class DashboardViewSet(viewsets.ModelViewSet):
                         elif i == 2:
                             profit.append(res[i])
                         elif i == 3:
+                            referral_fee.append(res[i])
+                        elif i == 4:
                             month.append(res[i])
 
                 data = {
                     "month": month,
                     "selling": selling,
                     "buying": buying,
+                    "referral_fee": referral_fee,
                     "profit": profit,
                 }
                 return Response(data, status=status.HTTP_200_OK)
@@ -309,16 +313,93 @@ class DashboardViewSet(viewsets.ModelViewSet):
 
     @action(methods=['get'], detail=False)
     def monthly_ordered_product(self, request, *args, **kwargs):
-        query = """ SELECT * FROM (SELECT SUM(quantity) as quantity, product_id, to_char(date_created, 'YYYY-MM') as sana
-            from shoppingmall_orderedproduct group by product_id) group by sana order by sana
-               """
-        response = self.my_custom_sql(query)
-        titles = ['quantity', 'product_id', 'date']
-        datas = []
-        for res in response:
-            data = {}
-            for i, title in enumerate(titles):
-                data[title] = res[i]
 
-            datas.append(data)
-        return Response(datas, status=status.HTTP_200_OK)
+        user = request.user
+        if user.is_seller():
+            query_params = request.query_params
+            if 'shopId' in query_params:
+                query = """ SELECT * FROM (SELECT SUM(quantity) as quantity, product_id, to_char(date_created, 'YYYY-MM') as sana
+                    from shoppingmall_orderedproduct group by product_id) group by sana order by sana
+                       """
+                response = self.my_custom_sql(query)
+                titles = ['quantity', 'product_id', 'date']
+                datas = []
+                for res in response:
+                    data = {}
+                    for i, title in enumerate(titles):
+                        data[title] = res[i]
+
+                    datas.append(data)
+                return Response(datas, status=status.HTTP_200_OK)
+            else:
+                data = {
+                    "shopId": "Please sent the fields..."
+                }
+                return Response(data, status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            data = {
+                "user": "Please sent the fields..."
+            }
+            return Response(data, status=status.HTTP_401_UNAUTHORIZED)
+
+    @action(methods=['get'], detail=False)
+    def monthly_total_referral_fee(self, request, *args, **kwargs):
+        user = request.user
+        if user.is_seller():
+            query_params = request.query_params
+            if 'shopId' in query_params:
+                query = f""" SELECT SUM(total_referral_fee), to_char(date_created, 'YYYY-MM') as sana
+                FROM shoppingmall_order
+                where shop_id = '{query_params['shopId']}' group by sana;
+                                   """
+                response = self.my_custom_sql(query)
+                titles = ['total_referral_fee', 'month']
+                datas = []
+                for res in response:
+                    data = {}
+                    for i, title in enumerate(titles):
+                        data[title] = res[i]
+
+                    datas.append(data)
+                return Response(datas, status=status.HTTP_200_OK)
+            else:
+                data = {
+                    "shopId": "Please sent the fields..."
+                }
+                return Response(data, status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            data = {
+                "user": "Please sent the fields..."
+            }
+            return Response(data, status=status.HTTP_401_UNAUTHORIZED)
+
+    @action(methods=['get'], detail=False)
+    def daily_total_referral_fee(self, request, *args, **kwargs):
+        user = request.user
+        if user.is_seller():
+            query_params = request.query_params
+            if 'shopId' in query_params:
+                query = f""" SELECT SUM(total_referral_fee), to_char(date_created, 'YYYY-MM-DD') as sana
+                    FROM shoppingmall_order
+                    where shop_id = '{query_params['shopId']}' group by sana;
+                                       """
+                response = self.my_custom_sql(query)
+                titles = ['total_referral_fee', 'month']
+                datas = []
+                for res in response:
+                    data = {}
+                    for i, title in enumerate(titles):
+                        data[title] = res[i]
+
+                    datas.append(data)
+                return Response(datas, status=status.HTTP_200_OK)
+            else:
+                data = {
+                    "shopId": "Please sent the fields..."
+                }
+                return Response(data, status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            data = {
+                "user": "Please sent the fields..."
+            }
+            return Response(data, status=status.HTTP_401_UNAUTHORIZED)

@@ -192,7 +192,7 @@ class Organization(models.Model):
 
 def shop_photo_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
-    return '{}/{}'.format(instance.shop.id, filename)
+    return 'shop_{}/{}'.format(instance.shop.id, filename)
 
 
 class User(AbstractBaseUser):
@@ -316,16 +316,6 @@ class Shop(models.Model):
     sell_option = models.CharField(max_length=20, choices=SELL_OPTIONS, default='universal')
     config = models.ForeignKey(ShopConfig, on_delete=models.SET_NULL, null=True)
     date_created = models.DateTimeField('date_created', default=timezone.now)
-
-
-def user_telegram_address_directory_path(instance, filename):
-    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
-    return 'user_{}/address/{}'.format(instance.id, filename)
-
-
-def collection_directory_path(instance, filename):
-    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
-    return '{}/collection/{}'.format(instance.shop.id, filename)
 
 
 def customer_address_directory_path(instance, filename):
@@ -463,6 +453,11 @@ class Cart(models.Model):
     date_created = models.DateTimeField('date_created', default=timezone.now)
 
 
+def receipt_directory_path(instance, filename):
+    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
+    return 'shop_{}/receipt/{}'.format(instance.shop.id, filename)
+
+
 class Order(models.Model):
     id = models.AutoField(primary_key=True)
     order_number = models.CharField(max_length=100, blank=True)
@@ -492,6 +487,11 @@ class Order(models.Model):
     delivery = models.CharField(max_length=100, choices=DELIVERY_STATUS, blank=True, null=True)
     payment = models.CharField(max_length=100, choices=ORDER_PAYMENT, default='unpaid')
     deleted = models.BooleanField(default=False)
+    # receipt
+    is_paid = models.BooleanField(default=False)
+    is_read = models.BooleanField(default=False)
+    receipt = models.ImageField(null=True, upload_to=receipt_directory_path)
+
     # date
     date_created = models.DateTimeField('date_created', default=timezone.now)
 
@@ -536,6 +536,15 @@ class ShopView(models.Model):
     id = models.AutoField(primary_key=True)
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    date_created = models.DateTimeField('date_created', default=timezone.now)
+
+
+class Contract(models.Model):
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(Admin, on_delete=models.CASCADE)
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    referral_rate = models.FloatField(0.0)
     date_created = models.DateTimeField('date_created', default=timezone.now)
 
 

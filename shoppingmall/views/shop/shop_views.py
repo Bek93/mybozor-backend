@@ -155,6 +155,9 @@ class ShopViewSet(viewsets.ModelViewSet):
                        shop_id=0, user_id=user.id, payload_string=str(err), status_code=400)
             return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
 
+    def destroy(self, request, *args, **kwargs):
+        return Response({"error": ["Only admins have this rights"]}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     """
     Update a model instance.
     """
