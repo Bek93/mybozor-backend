@@ -281,11 +281,11 @@ class Seller(User):
     is_shop_staff = models.BooleanField(
         'shop_staff_status', default=False, help_text=(
             'Designates whether the user can log into this admin site.'))
+    is_shop_owner = models.BooleanField(
+        'shop_owner_status', default=False, help_text=(
+            'Designates whether the user can log into this admin site.'))
     email = models.CharField(max_length=100, unique=True, null=False)
     name = models.CharField(max_length=100, null=False, blank=False)
-    province = models.ForeignKey(Province, on_delete=models.CASCADE, blank=True, null=True)
-    gender = models.CharField(max_length=10, choices=GENDER)
-    age = models.IntegerField()
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)
     language = models.CharField(max_length=5, choices=LANGUAGE, default="uz")
 
