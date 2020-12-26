@@ -32,7 +32,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
                 response = serializer.data
                 Logger().d(data_string='', method=request.method, path=request.path,
                            shop_id="", user_id=user.id, payload_string=response, status_code=200)
-                return Response(response)
+                return Response(response, status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_404_NOT_FOUND)
         except Exception as err:

@@ -33,7 +33,13 @@ class ShopUserViewSet(viewsets.ModelViewSet):
                            shop_id="", user_id=user.id, payload_string=response, status_code=200)
                 return Response(response)
             else:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+
+                queryset = Seller.objects.filter(organization=user.seller.organization)
+                serializer = SellerSerializer(queryset, context=self.get_serializer_context(), many=True)
+                response = serializer.data
+                Logger().d(data_string='', method=request.method, path=request.path,
+                           shop_id="", user_id=user.id, payload_string=response, status_code=200)
+                return Response(response)
         except Exception as err:
             Logger().d(data_string='', method=request.method, path=request.path,
                        shop_id="", user_id=user.id, payload_string=str(err), status_code=400)

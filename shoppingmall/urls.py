@@ -8,6 +8,7 @@ from shoppingmall.views.customer import customer_views, product_views as custome
     order_views as customer_order_views, province_views
 from shoppingmall.views.organization import organization_views
 from shoppingmall.views.admin import dashboard_views as admin_dashboard_views, category_views
+from shoppingmall.views import marketing_push_views, announcement_views
 
 router = routers.DefaultRouter()
 router.register(r'user', shop_user_views.ShopUserViewSet, basename="users"),
@@ -18,6 +19,10 @@ router.register(r'images', image_views.ImagesViewSet, basename="images"),
 router.register(r'shop', shop_views.ShopViewSet, basename="shop"),
 router.register(r'order', order_views.OrderViewSet, basename="order"),
 router.register(r'dashboard', dashboard_views.DashboardViewSet, basename="dashboard"),
+router.register(r'marketing-push',  marketing_push_views.MarketingPushViewSet, basename="marketing-push"),
+router.register(r'announcement',  announcement_views.AnnouncementViewSet, basename="announcement"),
+router.register(r'province', province_views.ProvinceViewSet, basename="province"),
+
 
 organization = routers.DefaultRouter()
 organization.register(r'', organization_views.OrganizationViewSet, basename="organization"),
@@ -30,9 +35,10 @@ admin.register(r'organization', organization_views.OrganizationViewSet, basename
 admin.register(r'seller', shop_user_views.ShopUserViewSet, basename="seller"),
 admin.register(r'customer', customer_views.CustomerViewSet, basename="customer"),
 admin.register(r'province', province_views.ProvinceViewSet, basename="province"),
+admin.register(r'marketing-push', marketing_push_views.MarketingPushViewSet, basename="marketing-push"),
 
 user = routers.DefaultRouter()
-user.register(r'', shop_user_views.ShopUserViewSet, basename="organization"),
+user.register(r'', shop_user_views.ShopUserViewSet, basename="seller"),
 
 customer = routers.DefaultRouter()
 customer.register(r'customer', customer_views.CustomerViewSet, basename="customer"),

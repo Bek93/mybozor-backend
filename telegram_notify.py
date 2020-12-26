@@ -319,7 +319,7 @@ class TelegramNotify:
         [token, conf] = self.getConfiguration(1)
         if token:
             bot = telegram.Bot(token=token)
-            bot.send_message(
+            return bot.send_message(
                 chat_id=userId,
                 text=message
             )

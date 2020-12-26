@@ -13,6 +13,14 @@ LANGUAGE = (
     ('uz', 'Uzbek'),
     ('kr', 'Korean')
 )
+GENDER = (
+    ('male', 'Male'),
+    ('female', 'Female'),
+)
+FILTER_TYPE = (
+    ('all', 'All'),
+    ('filter', 'Filter'),
+)
 CUSTOMERS = (
     ('telegram', 'Telegram'),
     ('app', 'App')
@@ -50,8 +58,10 @@ QUANTITY_UNIT = (
 )
 
 ANNOUNCEMENT_UNIT = (
+    ('message', 'message'),
     ('image', 'image'),
     ('video', 'Video'),
+    ('product', 'Product'),
 )
 GENDER = (
     ('male', 'Male'),
@@ -329,6 +339,8 @@ class Customer(User):
     shop = models.ForeignKey(Shop, on_delete=models.SET_NULL, null=True, blank=True)
     type = models.CharField(max_length=10, choices=CUSTOMERS, default="telegram")
     province = models.ForeignKey(Province, on_delete=models.CASCADE, blank=True, null=True)
+    age = models.IntegerField(default=0)
+    gender = models.CharField(max_length=10, choices=GENDER, default="male")
     address = models.CharField(null=True, max_length=255, blank=True)
     address_image = models.ImageField(null=True, upload_to=customer_address_directory_path)
     language = models.CharField(max_length=5, choices=LANGUAGE, default="uz")
@@ -548,13 +560,47 @@ class Contract(models.Model):
     date_created = models.DateTimeField('date_created', default=timezone.now)
 
 
+def announcement_image_directory_path(instance, filename):
+    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
+    return 'shop_{}/announcement/image/{}'.format(instance.shop.id, filename)
+
+
+def announcement_video_directory_path(instance, filename):
+    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
+    return 'shop_{}/announcement/video/{}'.format(instance.shop.id, filename)
+
+
+class Filter(models.Model):
+    id = models.AutoField(primary_key=True)
+    type = models.CharField(max_length=10, choices=FILTER_TYPE, default="all")
+    province = models.IntegerField(null=True)
+    language = models.CharField(max_length=5, choices=LANGUAGE, null=True)
+    gender = models.CharField(max_length=10, choices=GENDER, null=True)
+    date_created = models.DateTimeField('date_created', default=timezone.now)
+
+
 class Announcement(models.Model):
     id = models.AutoField(primary_key=True)
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE, blank=True)
+    type = models.CharField(max_length=10, choices=ANNOUNCEMENT_UNIT, blank=True)
+    filter = models.ForeignKey(Filter, on_delete=models.CASCADE, blank=True, null=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=True, null=True)
     titles = models.ForeignKey(Localize, on_delete=models.SET_NULL, null=True, related_name='announcement_titles')
     descriptions = models.ForeignKey(Localize, on_delete=models.SET_NULL, null=True,
                                      related_name='announcement_descriptions')
-    type = models.CharField(max_length=10, choices=ANNOUNCEMENT_UNIT, blank=True)
-    image = models.ImageField(null=True, upload_to=photo_directory_path)
-    video = models.FileField(null=True, upload_to=photo_directory_path)
+    image = models.ImageField(null=True, upload_to=announcement_image_directory_path)
+    is_completed = models.BooleanField(default=False)
+    total_target_count = models.IntegerField(blank=True, null=True)
+    started_at = models.DateTimeField('start_at', blank=True, null=True)
+    ended_at = models.DateTimeField('end_at', blank=True, null=True)
+    date_created = models.DateTimeField('date_created', default=timezone.now)
+
+
+class DeliveredAnnouncement(models.Model):
+    id = models.AutoField(primary_key=True)
+    announcement = models.ForeignKey(Announcement, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    is_read = models.BooleanField(default=False)
+    is_sent = models.BooleanField(default=False)
+    is_failed = models.BooleanField(default=False)
     date_created = models.DateTimeField('date_created', default=timezone.now)
