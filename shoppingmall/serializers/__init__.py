@@ -22,7 +22,7 @@ class LocalizeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Localize
-        fields = ('id', 'uz', 'en', 'kr', 'ru', 'date_created')
+        fields = ('id', 'type', 'uz', 'en', 'kr', 'ru', 'date_created')
         ordering = ['-date_created']
 
 

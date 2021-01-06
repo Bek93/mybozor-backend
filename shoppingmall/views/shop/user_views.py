@@ -5,7 +5,7 @@ from rest_framework_jwt.settings import api_settings
 
 from shoppingmall.models import User, Seller
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from django.utils.crypto import get_random_string
 
 from shoppingmall.utils.logger import Logger
@@ -34,7 +34,7 @@ class ShopUserViewSet(viewsets.ModelViewSet):
                 return Response(response)
             else:
 
-                queryset = Seller.objects.filter(organization=user.seller.organization)
+                queryset = Seller.objects.filter(shop=user.seller.shop)
                 serializer = SellerSerializer(queryset, context=self.get_serializer_context(), many=True)
                 response = serializer.data
                 Logger().d(data_string='', method=request.method, path=request.path,
@@ -71,6 +71,7 @@ class ShopUserViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = SellerSerializer(instance, context=self.get_serializer_context())
         return Response(serializer.data)
+
 
     """
     Update a model instance.

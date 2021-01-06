@@ -1,6 +1,7 @@
+from django.db import connection
 from rest_framework import serializers, fields
 
-from shoppingmall.models import Order, Product, User, Shop
+from shoppingmall.models import Order, Product, User, Shop, Invoice
 from shoppingmall.serializers.users_serializers import CustomerSerializer, SellerSerializer
 from shoppingmall.serializers.product_serializers import ProductReadSerializer
 from .shop_serializers import ShopReadSerializer
@@ -23,8 +24,48 @@ class OrderedProductSerializer(serializers.ModelSerializer):
         return ProductReadSerializer(item, context=self.context).data
 
 
+class InvoiceSerializer(serializers.ModelSerializer):
+    details = serializers.SerializerMethodField()
+
+    def __init__(self, *args, **kwargs):
+        kwargs['partial'] = True
+        super(InvoiceSerializer, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Invoice
+        fields = (
+            'id', 'shop', 'month', 'status', 'invoice_number', 'details', 'date_created')
+
+    def get_details(self, obj):
+        query = f"""SELECT SUM(total_selling), SUM(total_referral_fee), COUNT(*)from shoppingmall_order where invoice_id={obj.id}"""
+        response = self.my_custom_sql(query)
+        total_referral_fee = 0
+        total_selling = 0
+        count = 0
+        if len(response) > 0:
+            row = response[0]
+            total_selling = row[0]
+            total_referral_fee = row[1]
+            count = row[2]
+
+        data = {
+            "total_selling": total_selling,
+            "total_referral_fee": total_referral_fee,
+            "count": count
+        }
+        return data
+
+    def my_custom_sql(self, sql):
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
+            row = cursor.fetchall()
+
+        return row
+
+
 class OrderSerializer(serializers.ModelSerializer):
     products = fields.SerializerMethodField(read_only=True)
+    invoice = InvoiceSerializer(read_only=True)
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -42,7 +83,7 @@ class OrderSerializer(serializers.ModelSerializer):
             # delivery info
             'posting_date', 'shipping_date', 'post_code', 'delivery_comment',
             # status
-            'status', 'delivery', 'payment', 'deleted',
+            'status', 'delivery', 'payment', 'deleted', 'invoice', 'accepted_by',
             'date_created')
         ordering = ['-date_created']
 
@@ -71,7 +112,7 @@ class OrderDetailsSerializer(serializers.ModelSerializer):
             # delivery info
             'posting_date', 'shipping_date', 'post_code', 'delivery_comment',
             # status
-            'status', 'delivery', 'payment', 'deleted',
+            'status', 'delivery', 'payment', 'deleted', 'invoice', 'accepted_by',
             'date_created')
         ordering = ['-date_created']
 
@@ -105,7 +146,7 @@ class AdminOrderDetailSerializer(serializers.ModelSerializer):
             # delivery info
             'posting_date', 'shipping_date', 'post_code', 'delivery_comment',
             # status
-            'status', 'delivery', 'payment', 'deleted',
+            'status', 'delivery', 'payment', 'deleted', 'invoice', 'accepted_by',
             'date_created')
         ordering = ['-date_created']
 

@@ -27,6 +27,11 @@ CUSTOMERS = (
 )
 
 ORDER_STATUS = (
+    ('unpaid', 'Unpaid'),
+    ('paid', 'Paid'),
+    ('cancel', 'Cancel'),
+)
+INVOICE_STATUS = (
     ('P', 'Pending'),
     ('A', 'Accepted'),
     ('C', 'Cancel'),
@@ -63,16 +68,19 @@ ANNOUNCEMENT_UNIT = (
     ('video', 'Video'),
     ('product', 'Product'),
 )
-GENDER = (
-    ('male', 'Male'),
-    ('female', 'Female'),
-)
 
 CURRENCY = (
     ('', ''),
     ('KRW', 'KRW'),
     ('USD', 'USD'),
     ('UZS', 'UZS'),
+)
+LOCALIZE = (
+    ('classification', 'Classification'),
+    ('category', 'Category'),
+    ('subproduct', 'Subproduct'),
+    ('product', 'Product'),
+    ('collection', 'Collection'),
 )
 collection_IMAGE_CHOICES = (
     ('app', 'app'),
@@ -192,14 +200,6 @@ class UserManager(BaseUserManager):
                                  **extra_fields)
 
 
-class Organization(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100, blank=False, null=False)
-    country = models.CharField(max_length=100, blank=False, null=False)
-    plan = models.TextField(blank=False, null=False)
-    date_created = models.DateTimeField('date_created', default=timezone.now)
-
-
 def shop_photo_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
     return 'shop_{}/{}'.format(instance.shop.id, filename)
@@ -248,6 +248,7 @@ class User(AbstractBaseUser):
 
 class Localize(models.Model):
     id = models.AutoField(primary_key=True)
+    type = models.CharField(max_length=20, choices=LOCALIZE, blank=True)
     uz = models.TextField(blank=True)
     ru = models.TextField(blank=True)
     en = models.TextField(blank=True)
@@ -273,23 +274,6 @@ class Admin(User):
     name = models.CharField(max_length=100, null=False, blank=False)
 
 
-class Seller(User):
-    is_shop_admin = models.BooleanField(
-        'shop_admin_status', default=False, help_text=(
-            'Designates whether the user can log into this admin site.'))
-
-    is_shop_staff = models.BooleanField(
-        'shop_staff_status', default=False, help_text=(
-            'Designates whether the user can log into this admin site.'))
-    is_shop_owner = models.BooleanField(
-        'shop_owner_status', default=False, help_text=(
-            'Designates whether the user can log into this admin site.'))
-    email = models.CharField(max_length=100, unique=True, null=False)
-    name = models.CharField(max_length=100, null=False, blank=False)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)
-    language = models.CharField(max_length=5, choices=LANGUAGE, default="uz")
-
-
 def user_profilepic_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
     if instance.is_app_user:
@@ -311,7 +295,6 @@ class ShopConfig(models.Model):
 
 class Shop(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     name = models.CharField(max_length=100, blank=False, null=False)
     country = models.CharField(max_length=100, blank=False, null=False)
     province = models.CharField(max_length=100, blank=True, null=True)
@@ -325,6 +308,47 @@ class Shop(models.Model):
     status = models.CharField(max_length=8, choices=SHOP_STATUS, default='pending')
     sell_option = models.CharField(max_length=20, choices=SELL_OPTIONS, default='universal')
     config = models.ForeignKey(ShopConfig, on_delete=models.SET_NULL, null=True)
+    date_created = models.DateTimeField('date_created', default=timezone.now)
+
+
+class Seller(User):
+    is_shop_admin = models.BooleanField(
+        'shop_admin_status', default=False, help_text=(
+            'Designates whether the user can log into this admin site.'))
+
+    is_shop_staff = models.BooleanField(
+        'shop_staff_status', default=False, help_text=(
+            'Designates whether the user can log into this admin site.'))
+    is_shop_owner = models.BooleanField(
+        'shop_owner_status', default=False, help_text=(
+            'Designates whether the user can log into this admin site.'))
+    email = models.CharField(max_length=100, unique=True, null=False)
+    name = models.CharField(max_length=100, null=False, blank=False)
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE, null=True, blank=True)
+    language = models.CharField(max_length=5, choices=LANGUAGE, default="uz")
+
+
+class Classification(models.Model):
+    id = models.AutoField(primary_key=True)
+    titles = models.ForeignKey(Localize, on_delete=models.SET_NULL, null=True)
+    is_active = models.BooleanField(default=True)
+    referral_rate = models.FloatField(default=0.0)
+    date_created = models.DateTimeField('date_created', default=timezone.now)
+
+
+class Category(models.Model):
+    id = models.AutoField(primary_key=True)
+    classification = models.ForeignKey(Classification, on_delete=models.SET_NULL, null=True)
+    titles = models.ForeignKey(Localize, on_delete=models.SET_NULL, null=True)
+    is_active = models.BooleanField(default=True)
+    date_created = models.DateTimeField('date_created', default=timezone.now)
+
+
+class Subproduct(models.Model):
+    id = models.AutoField(primary_key=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
+    titles = models.ForeignKey(Localize, on_delete=models.SET_NULL, null=True)
+    is_active = models.BooleanField(default=True)
     date_created = models.DateTimeField('date_created', default=timezone.now)
 
 
@@ -356,31 +380,25 @@ class Collection(models.Model):
     date_created = models.DateTimeField('date_created', default=timezone.now)
 
 
-class Category(models.Model):
-    id = models.AutoField(primary_key=True)
-    parent_id = models.IntegerField(default=0)
-    titles = models.ForeignKey(Localize, on_delete=models.SET_NULL, null=True)
-    is_active = models.BooleanField(default=True)
-    referral_rate = models.FloatField(default=0.0)
-    date_created = models.DateTimeField('date_created', default=timezone.now)
-
-
 class Product(models.Model):
     id = models.AutoField(primary_key=True)
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
     titles = models.ForeignKey(Localize, on_delete=models.SET_NULL, null=True, related_name='titles')
     descriptions = models.ForeignKey(Localize, on_delete=models.SET_NULL, null=True, related_name='descriptions')
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
+    subproduct = models.ForeignKey(Subproduct, on_delete=models.SET_NULL, null=True)
     collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True)
+    condition = models.CharField(max_length=100, blank=True)
+    brand = models.CharField(max_length=100, blank=True)
+    made_in = models.CharField(max_length=100, blank=True)
     buying = models.IntegerField(default=0)
     selling = models.IntegerField(default=0)
     referral_fee = models.IntegerField(default=0)
     quantity = models.IntegerField(default=0)
+    overable = models.BooleanField(default=False)
     has_delivery_fee = models.BooleanField(default=False)
     label = models.CharField(max_length=10, choices=LABEL_CHOICES, blank=True)
     unit = models.CharField(max_length=10, choices=QUANTITY_UNIT, blank=True)
     currency = models.CharField(max_length=10, choices=CURRENCY, default="KRW")
-    overable = models.BooleanField(default=False)
     has_option = models.BooleanField(default=False)
     banner = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
@@ -409,6 +427,9 @@ class DeliveryPolicy(models.Model):
     currency = models.CharField(max_length=10, choices=CURRENCY, default="KRW")
     comment = models.TextField(blank=True)
     date_created = models.DateTimeField('date_created', default=timezone.now)
+
+    class Meta:
+        unique_together = ('shop', 'type', 'unit_from', 'unit_to')
 
 
 class Images(models.Model):
@@ -470,6 +491,15 @@ def receipt_directory_path(instance, filename):
     return 'shop_{}/receipt/{}'.format(instance.shop.id, filename)
 
 
+class Invoice(models.Model):
+    id = models.AutoField(primary_key=True)
+    invoice_number = models.CharField(max_length=20, blank=True)
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
+    month = models.CharField(max_length=20)
+    status = models.CharField(max_length=20, choices=INVOICE_STATUS, default='unpaid')
+    date_created = models.DateTimeField('date_created', default=timezone.now)
+
+
 class Order(models.Model):
     id = models.AutoField(primary_key=True)
     order_number = models.CharField(max_length=100, blank=True)
@@ -504,6 +534,8 @@ class Order(models.Model):
     is_read = models.BooleanField(default=False)
     receipt = models.ImageField(null=True, upload_to=receipt_directory_path)
 
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, blank=True, null=True)
+    accepted_by = models.IntegerField(blank=True, null=True)
     # date
     date_created = models.DateTimeField('date_created', default=timezone.now)
 

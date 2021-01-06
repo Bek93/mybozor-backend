@@ -3,13 +3,12 @@ from rest_framework.exceptions import ValidationError
 
 from shoppingmall.models import Seller, Customer, Admin, Province
 from shoppingmall.serializers import ProvinceSerializer
-from shoppingmall.serializers.organization_serializers import OrganizationSerializer
-from shoppingmall.serializers.shop_serializers import ShopSerializer
+from shoppingmall.serializers.shop_serializers import ShopSerializer, ShopReadSerializer
 from shoppingmall.utils.image_utils import Base64ImageField
 
 
 class SellerSerializer(serializers.ModelSerializer):
-    organization = OrganizationSerializer(read_only=True)
+    shop = ShopReadSerializer(read_only=True)
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -18,12 +17,34 @@ class SellerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Seller
         fields = (
-            'id', 'username', 'email', 'name', 'password', 'language', 'age', 'province', 'gender', 'is_shop_admin',
-            'is_shop_staff', 'organization', 'date_joined')
+            'id', 'shop', 'username', 'email', 'name', 'password', 'language', 'is_shop_admin',
+            'is_shop_staff', 'is_shop_owner', 'shop', 'date_joined')
         extra_kwargs = {'password': {'write_only': True, 'required': True}}
 
     def create(self, validated_data):
 
+        try:
+            user = Seller.objects.create_shop_owner(**validated_data)
+        except ValidationError as err:
+            raise ValidationError(err)
+
+        return user
+
+
+class MemberSerializer(serializers.ModelSerializer):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['partial'] = True
+        super(MemberSerializer, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Seller
+        fields = (
+            'id', 'shop', 'username', 'email', 'name', 'password', 'language', 'is_shop_admin',
+            'is_shop_staff', 'is_shop_owner', 'shop', 'date_joined')
+        extra_kwargs = {'password': {'write_only': True, 'required': True}}
+
+    def create(self, validated_data):
         try:
             user = Seller.objects.create_shop_owner(**validated_data)
         except ValidationError as err:

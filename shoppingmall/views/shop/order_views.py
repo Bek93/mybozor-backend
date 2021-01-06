@@ -2,17 +2,18 @@ import datetime
 import json
 import os
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from shoppingmall.models import Order, Product, Options, Shop, OrderedProduct
+from shoppingmall.models import Order, Product, Options, Shop, OrderedProduct, Invoice
 from shoppingmall.serializers.order_serializers import OrderSerializer, OrderedProductSerializer
 from firebase_notify import FirebaseNotify
 from shoppingmall.serializers.shop_serializers import ShopReadSerializer
-from shoppingmall.utils.config import getNewOrderNumber
+from shoppingmall.utils.config import getNewOrderNumber, getInvoiceNumber
 from shoppingmall.utils.logger import Logger
 from telegram_notify import TelegramNotify
 
@@ -284,6 +285,22 @@ class OrderViewSet(viewsets.ModelViewSet):
             obj.status = 'A'
             obj.delivery = 'P'
             obj.save()
+
+            todayDataTime = datetime.datetime.now(seoul)
+            month = todayDataTime.strftime('%Y-%m')
+            try:
+                invoice = Invoice.objects.get(month=month, shop=obj.shop)
+            except ObjectDoesNotExist as ex:
+                print(ex)
+                invoice = Invoice(month=month, shop=obj.shop)
+                invoice.save()
+
+            invoice.invoice_number = getInvoiceNumber(month, invoice.id)
+            invoice.save()
+
+            obj.invoice = invoice
+            obj.save()
+
             try:
                 obj_ser = OrderSerializer(obj, context=self.get_serializer_context()).data
                 for orderedProduct in obj_ser['products']:
@@ -359,48 +376,44 @@ class OrderViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False)
     def overview(self, request, pk=None):
         if request.user.is_seller():
+            user = request.user
             query_params = request.query_params
-            if 'shopId' in query_params:
-                query = f"""SELECT count(*), status from shoppingmall_order \
-                where shop_id = '{query_params['shopId']}' group by status;"""
-                with connection.cursor() as cursor:
-                    cursor.execute(query)
-                    response = cursor.fetchall()
-                quantity = []
-                datas = {}
-                data = {}
-                for res in response:
+            shopId = str(user.seller.shop.id)
+            query = f"""SELECT count(*), status from shoppingmall_order \
+            where shop_id = '{query_params['shopId']}' group by status;"""
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                response = cursor.fetchall()
+            quantity = []
+            datas = {}
+            data = {}
+            for res in response:
 
-                    if res[1] == 'P':
-                        data['pending'] = res[0]
+                if res[1] == 'P':
+                    data['pending'] = res[0]
 
-                    if res[1] == 'A':
-                        data['accept'] = res[0]
+                if res[1] == 'A':
+                    data['accept'] = res[0]
 
-                datas["status"] = data
+            datas["status"] = data
 
-                query = f"""SELECT count(*), delivery from shoppingmall_order\
-                    where shop_id ='{query_params['shopId']}' and status='A' group by delivery;
-                                                       """
-                with connection.cursor() as cursor:
-                    cursor.execute(query)
-                    response = cursor.fetchall()
+            query = f"""SELECT count(*), delivery from shoppingmall_order\
+                where shop_id ='{shopId}' and status='A' group by delivery;
+                                                   """
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                response = cursor.fetchall()
 
-                data = {}
-                for res in response:
-                    if res[1] == 'P':
-                        data['preparing'] = res[0]
+            data = {}
+            for res in response:
+                if res[1] == 'P':
+                    data['preparing'] = res[0]
 
-                    if res[1] == 'S':
-                        data['sent'] = res[0]
-                datas["delivery"] = data
+                if res[1] == 'S':
+                    data['sent'] = res[0]
+            datas["delivery"] = data
 
-                return Response(datas, status=status.HTTP_200_OK)
-            else:
-                data = {
-                    "shopId": "Please sent the fields..."
-                }
-                return Response(data, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response(datas, status=status.HTTP_200_OK)
         else:
             return Response({"error": ["Only admins have this rights"]}, status=status.HTTP_406_NOT_ACCEPTABLE)
 

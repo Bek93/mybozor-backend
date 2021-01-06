@@ -18,15 +18,6 @@ class CollectionViewSet(viewsets.ModelViewSet):
     pagination_class = None
     logger = Logs()
 
-    def get_serializer_context(self):
-        user = self.request.user
-        language = "uz"
-        if user.is_authenticated and user.is_customer():
-            language = user.language
-        if 'lang' in self.request.query_params:
-            language = self.request.query_params['lang']
-        return {"language": language, "request": self.request}
-
     def create(self, request, *args, **kwargs):
         data = request.data
         user = request.user
@@ -83,9 +74,11 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True)
     def products(self, request, pk=None):
-        if 'shopId' in request.query_params:
-            shopId = request.query_params['shopId']
-            user = request.user
+        user = request.user
+
+        if user.is_seller():
+            shopId = str(user.seller.shop.id)
+
             try:
                 category = Collection.objects.get(id=int(pk))  # retrieve an object by pk provided
                 items = Product.objects.filter(category=category.pk).distinct().order_by('pk')
@@ -100,7 +93,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
                 return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
         else:
             data = {
-                "shopId": "Please sent the fields..."
+                "user": "Only sellers can access the endpoint"
             }
             return Response(data)
 
@@ -113,10 +106,9 @@ class CollectionViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def list(self, request, *args, **kwargs):
-
-        if 'shopId' in request.query_params:
-            shopId = request.query_params['shopId']
-            user = request.user
+        user = request.user
+        if user.is_seller():
+            shopId = str(user.seller.shop.id)
             try:
                 queryset = Collection.objects.all().filter(is_active=True).order_by('pk')
                 user = request.user
@@ -135,7 +127,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
                 return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
         else:
             data = {
-                "shopId": "Please sent the fields..."
+                "user": "Only sellers can access the endpoint"
             }
             return Response(data)
 

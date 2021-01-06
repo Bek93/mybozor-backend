@@ -16,3 +16,14 @@ def getNewOrderNumber(orderId):
     day = u'%02i' % today.day
 
     return '{}-{}-{}-{}'.format(year, month, day, orderId)
+
+
+def getInvoiceNumber(month, invoiceId):
+    if invoiceId < 10:
+        return '{}-000{}'.format(month, invoiceId)
+    elif invoiceId < 100:
+        return '{}-00{}'.format(month, invoiceId)
+    elif invoiceId < 1000:
+        return '{}-0{}'.format(month, invoiceId)
+    else:
+        return '{}-{}'.format(month, invoiceId)

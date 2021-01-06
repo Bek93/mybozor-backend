@@ -59,18 +59,34 @@ class ProductViewSet(viewsets.ModelViewSet):
             if options:
                 for option in options:
                     try:
-                        optionObject = Options.objects.get(id=option['id'])
-                        values = option.pop("values")
-                        optionSerializer = OptionSerializer(optionObject, data=option, partial=False)
-                        optionSerializer.is_valid(True)
-                        optionSerializer.save()
+                        if 'id' in option:
+                            optionObject = Options.objects.get(id=option['id'])
+                            values = option.pop("values")
+                            optionSerializer = OptionSerializer(optionObject, data=option, partial=False)
+                            optionSerializer.is_valid(True)
+                            optionSerializer.save()
 
-                        for value in values:
-                            if 'id' in value:
-                                valueObject = OptionValue.objects.get(id=value['id'])
-                                optionValueSerializer = OptionValueSerializer(valueObject, data=value, partial=False)
-                                optionValueSerializer.is_valid(True)
-                                optionValueSerializer.save()
+                            for value in values:
+                                if 'id' in value:
+                                    valueObject = OptionValue.objects.get(id=value['id'])
+                                    optionValueSerializer = OptionValueSerializer(valueObject, data=value,
+                                                                                  partial=False)
+                                    optionValueSerializer.is_valid(True)
+                                    optionValueSerializer.save()
+                                else:
+                                    value['option'] = option
+                                    valueObject = OptionValue.objects.create(**value)
+                                    valueObject.save()
+                        else:
+                            option['product'] = instance
+                            values = option.pop("values")
+                            optionObject = Options.objects.create(**option)
+                            optionObject.save()
+                            for value in values:
+                                value['option'] = optionObject
+                                valueObject = OptionValue.objects.create(**value)
+                                valueObject.save()
+
                     except ValidationError as err:
                         raise ValidationError(err)
 
@@ -95,8 +111,8 @@ class ProductViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         user = request.user
         query_params = request.query_params
-        if 'shopId' in query_params:
-            shopId = query_params['shopId']
+        if user.is_seller():
+            shopId = str(user.seller.shop.id)
             is_active = None
             if 'active' in query_params:
                 is_active = query_params['active'] == 'true'
@@ -125,7 +141,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                 return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
         else:
             data = {
-                "shopId": "Please sent the fields..."
+                "users": "Online seller can access the endpoint"
             }
             return Response(data)
 

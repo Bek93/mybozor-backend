@@ -1,10 +1,11 @@
 from django.core.exceptions import ValidationError
 from rest_framework import serializers, fields
 
-from shoppingmall.models import ProductImages, Product, Localize, Options, OptionValue, DeliveryPolicy, Category
+from shoppingmall.models import ProductImages, Product, Localize, Options, OptionValue, DeliveryPolicy, Category, \
+    Subproduct, Classification
 from shoppingmall.serializers import OptionSerializer, OptionReadSerializer, DeliveryPolicySerializer
 from shoppingmall.serializers.collection_serializers import CollectionAdminSerializer, \
-    LocalizeSerializer, CategorySerializer, ReadCategorySerializer
+    LocalizeSerializer, CategorySerializer, SubproductSerializer, ReadSubproductSerializer, ClassificationSerializer
 from shoppingmall.serializers.image_serializers import ProductImageSerializer
 
 
@@ -21,7 +22,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'id', 'shop', 'titles', 'descriptions', 'category', 'collection', 'buying', 'selling', 'referral_fee',
+            'id', 'shop', 'titles', 'descriptions', 'subproduct', 'collection', 'buying', 'selling', 'referral_fee',
             'quantity', 'has_delivery_fee', 'overable', 'unit',
             'label', 'banner', 'has_option', 'options', 'images', 'is_active', 'currency'
         )
@@ -46,8 +47,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         if 'options' in validated_data:
             options = validated_data.pop("options")
 
-        category = validated_data['category']
-        validated_data['referral_fee'] = category.referral_rate * validated_data['selling']
+        subproduct = validated_data['subproduct']
+        validated_data['referral_fee'] = subproduct.category.classification.referral_rate * validated_data['selling']
 
         try:
             product = Product.objects.create(**validated_data)
@@ -113,7 +114,9 @@ class ProductReadSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
     collection = CollectionAdminSerializer()
-    category = ReadCategorySerializer()
+    classification = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
+    subproduct = SubproductSerializer()
     options = serializers.SerializerMethodField()
     delivery_policy = serializers.SerializerMethodField()
 
@@ -124,7 +127,8 @@ class ProductReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'id', 'shop', 'titles', 'descriptions', 'category', 'collection', 'buying', 'selling', 'referral_fee',
+            'id', 'shop', 'titles', 'descriptions', 'classification', 'category', 'subproduct', 'collection', 'buying',
+            'selling', 'referral_fee',
             'quantity', 'has_delivery_fee', 'overable', 'unit', 'delivery_policy',
             'label', 'banner', 'has_option', 'options', 'images', 'image', 'is_active', 'currency'
         )
@@ -147,6 +151,16 @@ class ProductReadSerializer(serializers.ModelSerializer):
         img = ProductImageSerializer(image, many=True, context=self.context).data
         return img
 
+    def get_classification(self, obj):
+        if obj.subproduct and obj.subproduct.category:
+            classification = Classification.objects.get(id=obj.subproduct.category.classification_id)
+            return ClassificationSerializer(classification, context=self.context).data
+
+    def get_category(self, obj):
+        if obj.subproduct and obj.subproduct.category:
+            category = Category.objects.get(id=obj.subproduct.category_id)
+            return CategorySerializer(category, context=self.context).data
+
     def get_options(self, obj):
         options = Options.objects.filter(product=obj.id)
         return OptionReadSerializer(options, many=True, context=self.context).data
@@ -163,12 +177,25 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'id', 'shop', 'titles', 'descriptions', 'category', 'collection', 'buying', 'selling', 'referral_fee',
+            'id', 'shop', 'titles', 'descriptions', 'subproduct', 'collection', 'buying', 'selling', 'referral_fee',
             'quantity', 'has_delivery_fee', 'overable', 'unit',
             'label', 'banner', 'has_option', 'is_active', 'currency'
         )
         ordering = ['-date_created']
 
+
+class DashboardProductSerializer(serializers.ModelSerializer):
+    titles = LocalizeSerializer()
+
+    def __init__(self, *args, **kwargs):
+        kwargs['partial'] = True
+        super(DashboardProductSerializer, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Product
+        fields = (
+            'id', 'shop', 'titles')
+        ordering = ['-date_created']
 
 from rest_framework import serializers
 

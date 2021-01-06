@@ -31,7 +31,7 @@ class ShopSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shop
         fields = (
-            'id', 'organization', 'name', 'bank', 'country', 'city', 'province', 'phone_number', 'postal_code',
+            'id', 'name', 'bank', 'country', 'city', 'province', 'phone_number', 'postal_code',
             'address', 'delivery_policy', 'sell_option', 'config', 'status', 'date_created')
 
     def create(self, validated_data):
@@ -81,7 +81,7 @@ class ShopReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shop
         fields = (
-            'id', 'organization', 'name', 'bank', 'country', 'city', 'province', 'phone_number', 'postal_code',
+            'id', 'name', 'bank', 'country', 'city', 'province', 'phone_number', 'postal_code',
             'address', 'delivery_policy', 'sell_option', 'config', 'status', 'date_created')
 
     def get_delivery_policy(self, obj):
