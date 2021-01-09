@@ -128,7 +128,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         if user.is_seller():
             data = request.data
             data['user'] = user.pk
-            shop = Shop.objects.get(id=data['shop'])
+            shop = user.seller.shop
+            data['shop'] = str(shop.id)
             shop = ShopReadSerializer(shop, context=self.get_serializer_context()).data
             products = data.pop('products')
             serializer = OrderSerializer(data=data)
@@ -176,7 +177,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             order.total_buying = total_buying
             order.total_selling = total_selling
             order.delivery_fee = delivery_fee
-            order.total_referral_fee = total_referral_fee
+            order.total_referral_fee = 0
 
             order.order_number = getNewOrderNumber(order.id)
             order.save()
@@ -232,46 +233,41 @@ class OrderViewSet(viewsets.ModelViewSet):
         user = request.user
         if user.is_seller():
             query_params = request.query_params
-            if 'shopId' in query_params:
-                shopId = query_params['shopId']
-                from_date = None
-                to_date = None
-                if 'from' in query_params:
-                    from_date = query_params['from']
+            shopId = str(user.seller.shop.id)
+            from_date = None
+            to_date = None
+            if 'from' in query_params:
+                from_date = query_params['from']
 
-                if 'to' in query_params:
-                    to_date = query_params['to']
-                payment = None
-                if 'payment' in query_params:
-                    payment = query_params['payment']
-                statusOrder = None
-                if 'status' in query_params:
-                    statusOrder = query_params['status']
+            if 'to' in query_params:
+                to_date = query_params['to']
+            payment = None
+            if 'payment' in query_params:
+                payment = query_params['payment']
+            statusOrder = None
+            if 'status' in query_params:
+                statusOrder = query_params['status']
 
-                deleted = False
-                if 'deleted' in query_params:
-                    deleted = query_params['deleted']
-                queryset = Order.objects.filter(shop=shopId, deleted=deleted)
-                if from_date and to_date:
-                    queryset = queryset.filter(date_created__date__range=[from_date, to_date])
-                if payment:
-                    queryset = queryset.filter(payment=payment)
+            deleted = False
+            if 'deleted' in query_params:
+                deleted = query_params['deleted']
+            queryset = Order.objects.filter(shop=shopId, deleted=deleted)
+            if from_date and to_date:
+                queryset = queryset.filter(date_created__date__range=[from_date, to_date])
+            if payment:
+                queryset = queryset.filter(payment=payment)
 
-                if statusOrder:
-                    queryset = queryset.filter(status=statusOrder)
-                queryset = queryset.order_by('-date_created')
-                page = self.paginate_queryset(queryset)
-                if page is not None:
-                    serializer = OrderSerializer(page, context=self.get_serializer_context(), many=True)
-                    return self.get_paginated_response(serializer.data)
+            if statusOrder:
+                queryset = queryset.filter(status=statusOrder)
+            queryset = queryset.order_by('-date_created')
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = OrderSerializer(page, context=self.get_serializer_context(), many=True)
+                return self.get_paginated_response(serializer.data)
 
-                serializer = OrderSerializer(queryset, context=self.get_serializer_context(), many=True)
-                return Response(serializer.data)
-            else:
-                data = {
-                    "shopId": "Please sent the fields..."
-                }
-                return Response(data)
+            serializer = OrderSerializer(queryset, context=self.get_serializer_context(), many=True)
+            return Response(serializer.data)
+
         else:
             response = {"error": ["Only customer can access"]}
             Logger().d(data_string='', method=request.method, path=request.path,
@@ -305,7 +301,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 obj_ser = OrderSerializer(obj, context=self.get_serializer_context()).data
                 for orderedProduct in obj_ser['products']:
                     rProduct = Product.objects.get(pk=orderedProduct['product']['id'])
-                    if rProduct.overable:
+                    if not rProduct.infinite:
                         if rProduct.quantity >= orderedProduct["quantity"]:
                             rProduct.quantity -= orderedProduct["quantity"]
                             rProduct.save()
@@ -380,7 +376,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             query_params = request.query_params
             shopId = str(user.seller.shop.id)
             query = f"""SELECT count(*), status from shoppingmall_order \
-            where shop_id = '{query_params['shopId']}' group by status;"""
+            where shop_id = '{shopId}' group by status;"""
             with connection.cursor() as cursor:
                 cursor.execute(query)
                 response = cursor.fetchall()

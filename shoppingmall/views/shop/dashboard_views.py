@@ -33,7 +33,7 @@ class DashboardViewSet(viewsets.ModelViewSet):
                SUM(total_buying)                        as buying,
                (SUM(total_selling) - SUM(total_buying)) as profit, SUM(total_referral_fee) as referral_fee, month
                FROM (SELECT total_selling, total_buying, total_referral_fee, to_char(date_created, 'YYYY-MM') as month, date_created
-               from shoppingmall_order where deleted = false and shop_id='{shopId}' and status = 'A' OR status = 'S') as orders group by month order by month;
+               from shoppingmall_order where deleted = false and shop_id='{shopId}' and status = 'A') as orders group by month order by month;
                 """
             response = self.my_custom_sql(monthly_query)
             titles = ['selling', 'buying', 'profit', 'referral_fee', 'month']
@@ -80,8 +80,7 @@ class DashboardViewSet(viewsets.ModelViewSet):
            sana
     FROM (SELECT total_selling, total_buying, to_char(date_created, 'YYYY-MM-DD') as sana, date_created
           from shoppingmall_order
-          where deleted = false and shop_id='{shopId}' and status = 'A'
-             OR status = 'S' ) as orders where sana between to_char(now() - INTERVAL '30 days', 'YYYY-MM-DD') and 
+          where deleted = false and shop_id='{shopId}' and status = 'A') as orders where sana between to_char(now() - INTERVAL '30 days', 'YYYY-MM-DD') and 
              to_char(NOW(), 'YYYY-MM-DD') group by sana order by sana;
             """
             response = self.my_custom_sql(daily_query)
@@ -217,7 +216,7 @@ class DashboardViewSet(viewsets.ModelViewSet):
         if user.is_seller():
             shopId = str(user.seller.shop.id)
             query = f"""SELECT count(*), delivery from shoppingmall_order where deleted=false and 
-            shop_id='{shopId}' and delivery='P' or delivery='S' group by delivery;
+            shop_id='{shopId}' and (delivery='P' or delivery='S') group by delivery;
                        """
             response = self.my_custom_sql(query)
             quantity = []

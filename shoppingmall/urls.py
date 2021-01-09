@@ -8,7 +8,8 @@ from shoppingmall.views.customer import customer_views, product_views as custome
     collection_views as customer_category_views, customer_shop_views as customer_shop_views, cart_views, \
     order_views as customer_order_views, province_views
 
-from shoppingmall.views.admin import dashboard_views as admin_dashboard_views
+from shoppingmall.views.admin import dashboard_views as admin_dashboard_views, shop_views as admin_shop_views, \
+    product_views as admin_product_views
 from shoppingmall.views import marketing_push_views, announcement_views, invoice_views, subproduct_views, \
     category_views, classification_views
 
@@ -31,9 +32,10 @@ router.register(r'invoice', invoice_views.InvoiceViewSet, basename="invoice"),
 admin = routers.DefaultRouter()
 admin.register(r'dashboard', admin_dashboard_views.DashboardViewSet, basename="dashboard"),
 admin.register(r'category', category_views.CategoryViewSet, basename="category"),
-admin.register(r'shop', shop_views.ShopViewSet, basename="shop"),
+admin.register(r'shop', admin_shop_views.ShopViewSet, basename="shop"),
 admin.register(r'seller', shop_user_views.ShopUserViewSet, basename="seller"),
 admin.register(r'customer', customer_views.CustomerViewSet, basename="customer"),
+admin.register(r'product', admin_product_views.ProductViewSet, basename="product"),
 admin.register(r'province', province_views.ProvinceViewSet, basename="province"),
 admin.register(r'marketing-push', marketing_push_views.MarketingPushViewSet, basename="marketing-push"),
 admin.register(r'invoice', invoice_views.InvoiceViewSet, basename="invoice"),

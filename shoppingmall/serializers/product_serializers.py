@@ -23,8 +23,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         model = Product
         fields = (
             'id', 'shop', 'titles', 'descriptions', 'subproduct', 'collection', 'buying', 'selling', 'referral_fee',
-            'quantity', 'has_delivery_fee', 'overable', 'unit',
-            'label', 'banner', 'has_option', 'options', 'images', 'is_active', 'currency'
+            'quantity', 'has_delivery_fee', 'infinite', 'unit', 'label', 'banner', 'has_option', 'options', 'images',
+            'is_active', 'currency', 'condition', 'brand', 'made_in'
         )
         ordering = ['-date_created']
 
@@ -128,9 +128,9 @@ class ProductReadSerializer(serializers.ModelSerializer):
         model = Product
         fields = (
             'id', 'shop', 'titles', 'descriptions', 'classification', 'category', 'subproduct', 'collection', 'buying',
-            'selling', 'referral_fee',
-            'quantity', 'has_delivery_fee', 'overable', 'unit', 'delivery_policy',
-            'label', 'banner', 'has_option', 'options', 'images', 'image', 'is_active', 'currency'
+            'selling', 'referral_fee', 'quantity', 'has_delivery_fee', 'infinite', 'unit', 'delivery_policy', 'label',
+            'banner', 'has_option', 'options', 'images', 'image', 'is_active', 'currency', 'condition', 'brand',
+            'made_in'
         )
         ordering = ['-date_created']
 
@@ -178,8 +178,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = (
             'id', 'shop', 'titles', 'descriptions', 'subproduct', 'collection', 'buying', 'selling', 'referral_fee',
-            'quantity', 'has_delivery_fee', 'overable', 'unit',
-            'label', 'banner', 'has_option', 'is_active', 'currency'
+            'quantity', 'has_delivery_fee', 'infinite', 'unit', 'label', 'banner', 'has_option', 'is_active', 'currency'
         )
         ordering = ['-date_created']
 
@@ -196,6 +195,7 @@ class DashboardProductSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'shop', 'titles')
         ordering = ['-date_created']
+
 
 from rest_framework import serializers
 

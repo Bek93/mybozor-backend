@@ -97,19 +97,25 @@ class ShopViewSet(viewsets.ModelViewSet):
                                 optionSerializer.save()
                             else:
                                 policy['shop'] = pk
+                                dps = DeliveryPolicy.objects.filter(shop=pk)
+                                if len(dps) > 0:
+                                    for dp in dps:
+                                        if dp.unit_to < policy['unit_from']:
+                                            optionSerializer = DeliveryPolicySerializer(data=policy)
+                                            optionSerializer.is_valid(True)
+                                            optionSerializer.save()
+                                            response.append(optionSerializer.data)
+                                        else:
+                                            data = {
+                                                "user": "Please check delivery policy type unit_from, unit_to"
+                                            }
+                                            return Response(data, status=status.HTTP_406_NOT_ACCEPTABLE)
+                                else:
+                                    optionSerializer = DeliveryPolicySerializer(data=policy)
+                                    optionSerializer.is_valid(True)
+                                    optionSerializer.save()
+                                    response.append(optionSerializer.data)
 
-                                dps = DeliveryPolicy.objects.filter(type=policy['type'], shop=pk)
-                                for dp in dps:
-                                    if dp.unit_to < policy['unit_from']:
-                                        optionSerializer = DeliveryPolicySerializer(data=policy)
-                                        optionSerializer.is_valid(True)
-                                        optionSerializer.save()
-                                        response.append(optionSerializer.data)
-                                    else:
-                                        data = {
-                                            "user": "Please check delivery policy type unit_from, unit_to"
-                                        }
-                                        return Response(data, status=status.HTTP_406_NOT_ACCEPTABLE)
                     except Exception as ex:
                         print(ex)
                 Logger().d(data_string='', method=request.method, path=request.path,
@@ -157,36 +163,24 @@ class ShopViewSet(viewsets.ModelViewSet):
         return Response(response, status=status.HTTP_201_CREATED, headers=headers)
 
     def list(self, request, *args, **kwargs):
-        # user = request.user
-        # try:
-        #     if user.is_authenticated and user.is_seller():
-        #         queryset = Shop.objects.all().filter(organization=user.seller.organization.pk).order_by('pk')
-        #         serializer = ShopReadSerializer(queryset, context=self.get_serializer_context(), many=True)
-        #         response = serializer.data
-        #         Logger().d(data_string='', method=request.method, path=request.path,
-        #                    shop_id=0, user_id=user.id, payload_string=response, status_code=200)
-        #         return Response(response)
-        #     elif user.is_authenticated and user.is_admin():
-        #
-        #         queryset = Shop.objects.all().order_by('date_created')
-        #         serializer = ShopReadSerializer(queryset, context=self.get_serializer_context(), many=True)
-        #         response = serializer.data
-        #         Logger().d(data_string='', method=request.method, path=request.path,
-        #                    shop_id=0, user_id=user.id, payload_string=response, status_code=200)
-        #         return Response(response)
-        #     else:
-        #         data = {
-        #             "user": "the user is not seller"
-        #         }
-        #         return Response(data, status=status.HTTP_400_BAD_REQUEST)
-        # except Exception as err:
-        #     Logger().d(data_string='', method=request.method, path=request.path,
-        #                shop_id=0, user_id=user.id, payload_string=str(err), status_code=400)
-        #     return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
-        data = {
-            "user": "the user is not seller"
-        }
-        return Response(data, status=status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        try:
+            if user.is_authenticated and user.is_seller():
+                queryset = Shop.objects.get(id=user.seller.shop.id)
+                serializer = ShopReadSerializer(queryset, context=self.get_serializer_context())
+                response = serializer.data
+                Logger().d(data_string='', method=request.method, path=request.path,
+                           shop_id=response['id'], user_id=user.id, payload_string=response, status_code=200)
+                return Response(response)
+            else:
+                data = {
+                    "user": "the user is not seller"
+                }
+                return Response(data, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as err:
+            Logger().d(data_string='', method=request.method, path=request.path,
+                       shop_id=0, user_id=user.id, payload_string=str(err), status_code=400)
+            return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
         return Response({"error": ["Only admins have this rights"]}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

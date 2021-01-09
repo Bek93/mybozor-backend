@@ -18,20 +18,22 @@ class ProductViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data = request.data
         user = request.user
-        shopId = data['shop']
-        # images = req.pop("images")
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        try:
-            self.perform_create(serializer)
-        except Exception as err:
-            Logger().d(data_string='', method=request.method, path=request.path,
-                       shop_id=shopId, user_id=user.id, payload_string=str(err), status_code=400)
-            return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
-        response = serializer.data
-        Logger().d(data_string=data, method=request.method, path=request.path,
-                   shop_id=0, user_id=user.id, payload_string=response, status_code=201)
-        return Response(response, status=status.HTTP_201_CREATED)
+        if user.is_seller():
+            shopId = str(user.seller.shop.id)
+            data['shop'] = shopId
+            # images = req.pop("images")
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            try:
+                self.perform_create(serializer)
+            except Exception as err:
+                Logger().d(data_string='', method=request.method, path=request.path,
+                           shop_id=shopId, user_id=user.id, payload_string=str(err), status_code=400)
+                return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
+            response = serializer.data
+            Logger().d(data_string=data, method=request.method, path=request.path,
+                       shop_id=0, user_id=user.id, payload_string=response, status_code=201)
+            return Response(response, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)

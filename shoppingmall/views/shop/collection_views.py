@@ -22,6 +22,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
         data = request.data
         user = request.user
         if user.is_seller():
+            data['shop'] = user.seller.shop.id
             serializer = CollectionAdminSerializer(data=data)
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
@@ -80,8 +81,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
             shopId = str(user.seller.shop.id)
 
             try:
-                category = Collection.objects.get(id=int(pk))  # retrieve an object by pk provided
-                items = Product.objects.filter(category=category.pk).distinct().order_by('pk')
+                collection = Collection.objects.get(id=int(pk))  # retrieve an object by pk provided
+                items = Product.objects.filter(collection=collection.pk).distinct().order_by('pk')
                 productReadSerializer = ProductReadSerializer(items, many=True, context=self.get_serializer_context())
                 response = productReadSerializer.data
                 Logger().d(data_string='', method=request.method, path=request.path,

@@ -394,7 +394,7 @@ class Product(models.Model):
     selling = models.IntegerField(default=0)
     referral_fee = models.IntegerField(default=0)
     quantity = models.IntegerField(default=0)
-    overable = models.BooleanField(default=False)
+    infinite = models.BooleanField(default=False)
     has_delivery_fee = models.BooleanField(default=False)
     label = models.CharField(max_length=10, choices=LABEL_CHOICES, blank=True)
     unit = models.CharField(max_length=10, choices=QUANTITY_UNIT, blank=True)
@@ -420,7 +420,6 @@ def product_photo_directory_path(instance, filename):
 class DeliveryPolicy(models.Model):
     id = models.AutoField(primary_key=True)
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
-    type = models.CharField(max_length=10, choices=QUANTITY_UNIT, blank=True)
     unit_from = models.IntegerField(default=0)
     unit_to = models.IntegerField(default=0)
     fee = models.IntegerField(default=0.0)
@@ -429,7 +428,7 @@ class DeliveryPolicy(models.Model):
     date_created = models.DateTimeField('date_created', default=timezone.now)
 
     class Meta:
-        unique_together = ('shop', 'type', 'unit_from', 'unit_to')
+        unique_together = ('shop', 'unit_from')
 
 
 class Images(models.Model):

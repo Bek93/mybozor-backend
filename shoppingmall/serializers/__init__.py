@@ -90,7 +90,7 @@ class DeliveryPolicySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DeliveryPolicy
-        fields = ('id', 'shop', 'type', 'unit_from', 'unit_to', 'fee', 'currency', 'comment', 'date_created')
+        fields = ('id', 'shop', 'unit_from', 'unit_to', 'fee', 'currency', 'comment', 'date_created')
 
 
 class ProvinceSerializer(serializers.ModelSerializer):

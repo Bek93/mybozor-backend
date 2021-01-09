@@ -55,8 +55,6 @@ class ClassificationViewSet(viewsets.ModelViewSet):
                        shop_id="", user_id=user.id, payload_string=str(err), status_code=400)
             return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
 
-
-
     @action(detail=True)
     def category(self, request, pk=None):
         user = request.user
