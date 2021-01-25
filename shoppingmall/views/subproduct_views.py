@@ -71,26 +71,18 @@ class SubproductViewSet(viewsets.ModelViewSet):
 
     @action(detail=True)
     def products(self, request, pk=None):
-        if 'shopId' in request.query_params:
-            shopId = request.query_params['shopId']
-            user = request.user
-            try:
-                subproduct = Subproduct.objects.get(id=int(pk))  # retrieve an object by pk provided
-                items = Product.objects.filter(category=subproduct.pk).distinct().order_by('pk')
-                productReadSerializer = ProductReadSerializer(items, many=True, context=self.get_serializer_context())
-                response = productReadSerializer.data
-                Logger().d(data_string='', method=request.method, path=request.path,
-                           shop_id=shopId, user_id=user.id, payload_string=response, status_code=200)
-                return Response(response)
-            except Exception as err:
-                Logger().d(data_string='', method=request.method, path=request.path,
-                           shop_id=shopId, user_id=user.id, payload_string=str(err), status_code=400)
-                return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
-        else:
-            data = {
-                "shopId": "Please sent the fields..."
-            }
-            return Response(data)
+        user = request.user
+        try:
+            items = Product.objects.filter(subproduct=pk).distinct().order_by('pk')
+            productReadSerializer = ProductReadSerializer(items, many=True, context=self.get_serializer_context())
+            response = productReadSerializer.data
+            Logger().d(data_string='', method=request.method, path=request.path,
+                       shop_id="shopId", user_id=user.id, payload_string=response, status_code=200)
+            return Response(response)
+        except Exception as err:
+            Logger().d(data_string='', method=request.method, path=request.path,
+                       shop_id="shopId", user_id=user.id, payload_string=str(err), status_code=400)
+            return Response(str(err), status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, *args, **kwargs):
         user = request.user

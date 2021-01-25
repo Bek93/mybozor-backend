@@ -31,6 +31,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def update(self, request, *args, **kwargs):
+
+
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     @action(detail=True)
@@ -96,6 +98,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
             Logger().d(data_string='', method=request.method, path=request.path,
                        shop_id=0, user_id=user.id, payload_string=data, status_code=400)
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+
 
     def get_permissions(self):
         if self.action == 'list' or self.action == 'retrieve' or self.action == 'products':

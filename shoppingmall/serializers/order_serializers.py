@@ -6,6 +6,7 @@ from shoppingmall.serializers.users_serializers import CustomerSerializer, Selle
 from shoppingmall.serializers.product_serializers import ProductReadSerializer
 from .shop_serializers import ShopReadSerializer
 from ..models import OrderedProduct
+from ..utils.image_utils import Base64ImageField
 
 
 class OrderedProductSerializer(serializers.ModelSerializer):
@@ -66,6 +67,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     products = fields.SerializerMethodField(read_only=True)
     invoice = InvoiceSerializer(read_only=True)
+    receipt = Base64ImageField(max_length=None, use_url=True)
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -79,11 +81,13 @@ class OrderSerializer(serializers.ModelSerializer):
             'address', 'address_image',
             'language', 'products',
             # price info
-            'total_buying', 'total_selling', 'delivery_fee',
+            'total_buying', 'total_selling', 'delivery_fee', 'total_referral_fee',
             # delivery info
             'posting_date', 'shipping_date', 'post_code', 'delivery_comment',
             # status
             'status', 'delivery', 'payment', 'deleted', 'invoice', 'accepted_by',
+            # receipt
+            'is_paid', 'is_read', 'receipt',
             'date_created')
         ordering = ['-date_created']
 
@@ -95,6 +99,7 @@ class OrderSerializer(serializers.ModelSerializer):
 class OrderDetailsSerializer(serializers.ModelSerializer):
     products = fields.SerializerMethodField(read_only=True)
     shop = fields.SerializerMethodField(read_only=True)
+    receipt = Base64ImageField(max_length=None, use_url=True)
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -108,11 +113,13 @@ class OrderDetailsSerializer(serializers.ModelSerializer):
             'address', 'address_image',
             'language', 'products',
             # price info
-            'total_buying', 'total_selling', 'delivery_fee',
+            'total_buying', 'total_selling', 'delivery_fee', 'total_referral_fee',
             # delivery info
             'posting_date', 'shipping_date', 'post_code', 'delivery_comment',
             # status
             'status', 'delivery', 'payment', 'deleted', 'invoice', 'accepted_by',
+            # receipt
+            'is_paid', 'is_read', 'receipt',
             'date_created')
         ordering = ['-date_created']
 
@@ -121,13 +128,14 @@ class OrderDetailsSerializer(serializers.ModelSerializer):
         return OrderedProductSerializer(items, many=True, context=self.context).data
 
     def get_shop(self, obj):
-        shop = Shop.objects.filter(id=obj.shop.pk)
+        shop = Shop.objects.get(id=obj.shop.pk)
         return ShopReadSerializer(shop, context=self.context).data
 
 
 class AdminOrderDetailSerializer(serializers.ModelSerializer):
     products = fields.SerializerMethodField(read_only=True)
     user = fields.SerializerMethodField(read_only=True)
+    receipt = Base64ImageField(max_length=None, use_url=True)
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -147,6 +155,8 @@ class AdminOrderDetailSerializer(serializers.ModelSerializer):
             'posting_date', 'shipping_date', 'post_code', 'delivery_comment',
             # status
             'status', 'delivery', 'payment', 'deleted', 'invoice', 'accepted_by',
+            # receipt
+            'is_paid', 'is_read', 'receipt',
             'date_created')
         ordering = ['-date_created']
 

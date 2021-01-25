@@ -259,7 +259,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
             if statusOrder:
                 queryset = queryset.filter(status=statusOrder)
-            queryset = queryset.order_by('-date_created')
+            queryset = queryset.order_by('-date_created', '-is_paid')
             page = self.paginate_queryset(queryset)
             if page is not None:
                 serializer = OrderSerializer(page, context=self.get_serializer_context(), many=True)
@@ -269,7 +269,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
 
         else:
-            response = {"error": ["Only customer can access"]}
+            response = {"error": ["Only seller can access"]}
             Logger().d(data_string='', method=request.method, path=request.path,
                        shop_id=0, user_id=user.id, payload_string=response, status_code=403)
             return Response(response, status=status.HTTP_403_FORBIDDEN)
@@ -411,7 +411,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
             return Response(datas, status=status.HTTP_200_OK)
         else:
-            return Response({"error": ["Only admins have this rights"]}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response({"error": ["Only seller have this rights"]}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
     @action(methods=['post'], detail=True)
     def sent(self, request, pk=None):

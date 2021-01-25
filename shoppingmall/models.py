@@ -26,12 +26,12 @@ CUSTOMERS = (
     ('app', 'App')
 )
 
-ORDER_STATUS = (
+INVOICE_STATUS = (
     ('unpaid', 'Unpaid'),
     ('paid', 'Paid'),
     ('cancel', 'Cancel'),
 )
-INVOICE_STATUS = (
+ORDER_STATUS = (
     ('P', 'Pending'),
     ('A', 'Accepted'),
     ('C', 'Cancel'),
@@ -125,9 +125,8 @@ class UserManager(BaseUserManager):
                      is_staff, is_admin, **extra_fields):
         now = timezone.now()
         is_active = extra_fields.pop("is_active", True)
-        user = self.model(is_active=is_active, last_login=now,
-                          username=username,
-                          date_joined=now, **extra_fields)
+        user = Admin(is_active=is_active, last_login=now, username=username,
+                     date_joined=now, **extra_fields)
         if not is_admin:
             user = self.model(is_staff=is_staff, is_active=is_active, last_login=now,
                               is_admin=is_admin,
@@ -140,32 +139,32 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def _app_create_user(self, username, password,
-                         is_staff, is_admin, **extra_fields):
-        now = timezone.now()
-        is_active = extra_fields.pop("is_active", True)
-        user = self.model(is_staff=is_staff, is_active=is_active, last_login=now,
-                          is_admin=is_admin,
-                          username=username,
-                          date_joined=now, **extra_fields)
-        if not is_admin:
-            user = self.model(is_staff=is_staff, is_active=is_active, last_login=now,
-                              is_admin=is_admin,
-                              username=username,
-                              date_joined=now, **extra_fields)
+    # def _app_create_user(self, username, password,
+    #                      is_staff, is_admin, **extra_fields):
+    #     now = timezone.now()
+    #     is_active = extra_fields.pop("is_active", True)
+    #     user = self.model(is_staff=is_staff, is_active=is_active, last_login=now,
+    #                       is_admin=is_admin,
+    #                       username=username,
+    #                       date_joined=now, **extra_fields)
+    #     if not is_admin:
+    #         user = self.model(is_staff=is_staff, is_active=is_active, last_login=now,
+    #                           is_admin=is_admin,
+    #                           username=username,
+    #                           date_joined=now, **extra_fields)
+    #
+    #     if password is None or len(password) <= 7:
+    #         raise ValidationError("password is required and it should be more then 4 chars")
+    #     user.set_password(password)
+    #     user.save(using=self._db)
+    #     return user
 
-        if password is None or len(password) <= 7:
-            raise ValidationError("password is required and it should be more then 4 chars")
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_user(self, username, image, phone, password=None, **extra_fields):
-        is_staff = extra_fields.pop("is_staff", False)
-        return self._create_user(username=username, password=password,
-                                 image=image, phone=phone, is_staff=is_staff,
-                                 is_admin=False,
-                                 **extra_fields)
+    # def create_user(self, username, image, phone, password=None, **extra_fields):
+    #     is_staff = extra_fields.pop("is_staff", False)
+    #     return self._create_user(username=username, password=password,
+    #                              image=image, phone=phone, is_staff=is_staff,
+    #                              is_admin=False,
+    #                              **extra_fields)
 
     def create_shop_owner(self, username, password=None, **extra_fields):
         # is_staff = extra_fields.pop("is_staff", False)
@@ -193,11 +192,18 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, username, password, **extra_fields):
+        now = timezone.now()
+        is_active = extra_fields.pop("is_active", True)
+        user = Admin(is_active=is_active, last_login=now, is_admin=True, is_staff=True, name="Admin",
+                     email="mybozor@mybozor.com",
+                     username=username,
+                     date_joined=now, **extra_fields)
 
-        return self._create_user(username=username, password=password,
-                                 is_staff=True,
-                                 is_admin=True,
-                                 **extra_fields)
+        if password is None or len(password) <= 7:
+            raise ValidationError("password is required and it should be more then 7 chars")
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
 
 
 def shop_photo_directory_path(instance, filename):
@@ -363,8 +369,8 @@ class Customer(User):
     shop = models.ForeignKey(Shop, on_delete=models.SET_NULL, null=True, blank=True)
     type = models.CharField(max_length=10, choices=CUSTOMERS, default="telegram")
     province = models.ForeignKey(Province, on_delete=models.CASCADE, blank=True, null=True)
-    age = models.IntegerField(default=0)
-    gender = models.CharField(max_length=10, choices=GENDER, default="male")
+    age = models.IntegerField(default=0, blank=True)
+    gender = models.CharField(max_length=10, choices=GENDER, blank=True)
     address = models.CharField(null=True, max_length=255, blank=True)
     address_image = models.ImageField(null=True, upload_to=customer_address_directory_path)
     language = models.CharField(max_length=5, choices=LANGUAGE, default="uz")
@@ -487,7 +493,9 @@ class Cart(models.Model):
 
 def receipt_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
-    return 'shop_{}/receipt/{}'.format(instance.shop.id, filename)
+    # filenames = filename.split(".")
+    # filename = f"{instance.order_number}.{filenames[1]}"
+    return 'shop_{}/receipt/{}/{}'.format(instance.shop.id, instance.order_number, filename)
 
 
 class Invoice(models.Model):

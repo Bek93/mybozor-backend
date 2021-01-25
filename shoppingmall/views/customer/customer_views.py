@@ -20,7 +20,6 @@ from shoppingmall.serializers.users_serializers import CustomerSerializer
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
-    permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
         user = request.user

@@ -7,6 +7,7 @@ from shoppingmall.serializers import OptionSerializer, OptionReadSerializer, Del
 from shoppingmall.serializers.collection_serializers import CollectionAdminSerializer, \
     LocalizeSerializer, CategorySerializer, SubproductSerializer, ReadSubproductSerializer, ClassificationSerializer
 from shoppingmall.serializers.image_serializers import ProductImageSerializer
+from shoppingmall.serializers.shop_serializers import ShopReadSerializer
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
@@ -111,6 +112,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 class ProductReadSerializer(serializers.ModelSerializer):
     titles = LocalizeSerializer()
     descriptions = LocalizeSerializer()
+    shop = ShopReadSerializer()
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
     collection = CollectionAdminSerializer()

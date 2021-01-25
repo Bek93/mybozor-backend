@@ -60,16 +60,19 @@ class ProductViewSet(viewsets.ModelViewSet):
                 instance = self.get_object()
                 serializer = ProductReadSerializer(instance, context=self.get_serializer_context())
                 response = serializer.data
-                productView = ProductView(shop=instance.shop, product=instance, customer=request.user.seller)
+                productView = ProductView(shop=instance.shop, product=instance, customer=request.user.customer)
                 productView.save()
 
-                shopView = ShopView(shop=instance, customer=request.user.seller)
+                shopView = ShopView(shop=instance.shop, customer=request.user.customer)
                 shopView.save()
-
-                Logger().d(data_string='', method=request.method, path=request.path,
-                           shop_id=response['shop'], user_id=user.id, payload_string=response, status_code=200)
+                try:
+                    Logger().d(data_string='', method=request.method, path=request.path,
+                               shop_id=response['shop'], user_id=user.id, payload_string=response, status_code=200)
+                except Exception as err:
+                    print(err)
                 return Response(serializer.data)
         except Exception as err:
+            print(err)
             Logger().d(data_string='', method=request.method, path=request.path,
                        shop_id=0, user_id=user.id, payload_string=str(err), status_code=400)
             return Response(str(err), status=status.HTTP_400_BAD_REQUEST)

@@ -65,7 +65,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         model = Customer
         fields = (
             'id', 'username', 'password', "name", "shop", "province", "province_id", "phone_number", "type", "address",
-            "address_image", "language", "deleted")
+            "address_image", "gender", "language", "deleted")
         extra_kwargs = {'password': {'write_only': True, 'required': True}}
 
     def create(self, validated_data):

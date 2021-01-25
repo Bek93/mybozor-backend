@@ -96,12 +96,11 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def subproduct(self, request, pk=None):
         user = request.user
         try:
-            queryset = Subproduct.objects.all().filter(is_active=True).order_by('pk')
+            queryset = Subproduct.objects.all().filter(category=pk, is_active=True).order_by('pk')
             user = request.user
             if user.is_authenticated and user.is_admin():
                 queryset = Subproduct.objects.all().order_by('pk')
                 serializer = ReadSubproductSerializer(queryset, context=self.get_serializer_context(), many=True)
-
             else:
                 serializer = ReadSubproductSerializer(queryset, context=self.get_serializer_context(), many=True)
             response = serializer.data

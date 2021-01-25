@@ -9,7 +9,7 @@ from shoppingmall.views.customer import customer_views, product_views as custome
     order_views as customer_order_views, province_views
 
 from shoppingmall.views.admin import dashboard_views as admin_dashboard_views, shop_views as admin_shop_views, \
-    product_views as admin_product_views
+    product_views as admin_product_views, order_views as admin_order_views
 from shoppingmall.views import marketing_push_views, announcement_views, invoice_views, subproduct_views, \
     category_views, classification_views
 
@@ -41,6 +41,7 @@ admin.register(r'marketing-push', marketing_push_views.MarketingPushViewSet, bas
 admin.register(r'invoice', invoice_views.InvoiceViewSet, basename="invoice"),
 admin.register(r'subproduct', subproduct_views.SubproductViewSet, basename="subproduct"),
 admin.register(r'classification', classification_views.ClassificationViewSet, basename="classification"),
+admin.register(r'order', admin_order_views.OrderViewSet, basename="order"),
 
 user = routers.DefaultRouter()
 user.register(r'', shop_user_views.ShopUserViewSet, basename="seller"),
@@ -50,7 +51,9 @@ customer.register(r'customer', customer_views.CustomerViewSet, basename="custome
 customer.register(r'cart', cart_views.CartViewSet, basename="cart"),
 customer.register(r'order', customer_order_views.OrderViewSet, basename="order"),
 customer.register(r'product', customer_product_views.ProductViewSet, basename="product"),
-customer.register(r'category', customer_category_views.CollectionViewSet, basename="category"),
+customer.register(r'category', category_views.CategoryViewSet, basename="category"),
+customer.register(r'subproduct', subproduct_views.SubproductViewSet, basename="subproduct"),
+customer.register(r'classification', classification_views.ClassificationViewSet, basename="classification"),
 customer.register(r'images', image_views.ImagesViewSet, basename="images"),
 customer.register(r'shops', customer_shop_views.CustomerShopViewSet, basename="shop"),
 customer.register(r'province', province_views.ProvinceViewSet, basename="province"),

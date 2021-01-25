@@ -8,8 +8,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from shoppingmall.models import Order, Product
-from shoppingmall.serializers.order_serializers import OrderSerializer, OrderedProductSerializer
+from shoppingmall.serializers.order_serializers import OrderSerializer, OrderedProductSerializer, OrderDetailsSerializer
 from firebase_notify import FirebaseNotify
+from shoppingmall.serializers.product_serializers import ProductCreateSerializer
 from shoppingmall.utils.logger import Logger
 from telegram_notify import TelegramNotify
 
@@ -46,11 +47,30 @@ class OrderViewSet(viewsets.ModelViewSet):
         user = request.user
         if user.is_customer():
             instance = self.get_object()
-            serializer = OrderSerializer(instance, context=self.get_serializer_context())
+            serializer = OrderDetailsSerializer(instance, context=self.get_serializer_context())
             response = serializer.data
             Logger().d(data_string='', method=request.method, path=request.path,
-                       shop_id=response['shop_id'], user_id=user.id, payload_string=response, status_code=200)
+                       shop_id="", user_id=user.id, payload_string=response, status_code=200)
             return Response(response)
+        else:
+            response = {"error": ["Only customer can access"]}
+            Logger().d(data_string='', method=request.method, path=request.path,
+                       shop_id=0, user_id=user.id, payload_string=response, status_code=403)
+            return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+    @action(detail=True, methods=['put'])
+    def receipt(self, request, pk=None):
+        user = request.user
+        if user.is_customer():
+            data = request.data
+            instance = self.get_object()
+            serializer = OrderSerializer(instance, data=data, partial=False)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            response = {"message": ["Updated"]}
+            Logger().d(data_string='', method=request.method, path=request.path,
+                       shop_id=0, user_id=user.id, payload_string=response, status_code=200)
+            return Response(response, status=status.HTTP_200_OK)
         else:
             response = {"error": ["Only customer can access"]}
             Logger().d(data_string='', method=request.method, path=request.path,
@@ -123,7 +143,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         if user.is_customer():
 
             queryset = Order.objects.filter(user=user.pk).order_by(
-                '-date_created')
+                '-date_created', '-is_paid')
             page = self.paginate_queryset(queryset)
             if page is not None:
                 serializer = OrderSerializer(page, context=self.get_serializer_context(), many=True)

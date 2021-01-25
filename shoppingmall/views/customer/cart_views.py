@@ -78,7 +78,7 @@ class CartViewSet(viewsets.ModelViewSet):
                     ids = cart.pop('ids')
                     shop = Shop.objects.get(id=cart['shopId'])
                     shop = ShopReadSerializer(shop, context=self.get_serializer_context()).data
-                    data["user"] = user
+                    data["user"] = user.pk
                     data["shop"] = cart['shopId']
                     data['name'] = user.customer.name
                     data['phone'] = user.customer.phone_number
@@ -135,7 +135,7 @@ class CartViewSet(viewsets.ModelViewSet):
                     order.total_referral_fee = total_referral_fee
                     order.order_number = getNewOrderNumber(order.id)
                     order.save()
-                    order_ser = OrderSerializer(order, context=self.get_serializer_context())
+                    order_ser = OrderDetailsSerializer(order, context=self.get_serializer_context())
                     response = order_ser.data
                     response['shop'] = shop
                     order_responses.append(response)
