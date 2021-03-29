@@ -62,6 +62,10 @@ class OrderViewSet(viewsets.ModelViewSet):
             if 'status' in query_params:
                 statusOrder = query_params['status']
 
+            shop = None
+            if 'shop' in query_params:
+                shop = query_params['shop']
+
             deleted = False
             if 'deleted' in query_params:
                 deleted = query_params['deleted']
@@ -70,7 +74,8 @@ class OrderViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(date_created__date__range=[from_date, to_date])
             if payment:
                 queryset = queryset.filter(payment=payment)
-
+            if shop:
+                queryset = queryset.filter(shop=shop)
             if statusOrder:
                 queryset = queryset.filter(status=statusOrder)
             queryset = queryset.order_by('-date_created', )

@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
@@ -20,6 +21,21 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @action(methods=['put'], detail=True)
+    def approve(self, request, pk=None):
+        user = request.user
+        if user.is_admin():
+            obj = self.get_object()
+            obj.is_approved = True
+            obj.save()
+            serializer = ProductReadSerializer(obj, context=self.get_serializer_context())
+            response = serializer.data
+            Logger().d(data_string='', method=request.method, path=request.path,
+                       shop_id=0, user_id=user.id, payload_string=response, status_code=200)
+            return Response(response, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": ["Only Admin can access"]}, status=status.HTTP_403_FORBIDDEN)
 
     def list(self, request, *args, **kwargs):
         user = request.user

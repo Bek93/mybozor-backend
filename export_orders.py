@@ -29,7 +29,7 @@ class ExportData:
 
     def new_order_to_store(self, order):
 
-        client = self.clientAuth.open("hojibobo_orders_2020")
+        client = self.clientAuth.open("mybozor")
 
         weekday = datetime.datetime.today().weekday()
         # today

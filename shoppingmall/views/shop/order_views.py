@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from shoppingmall.models import Order, Product, Options, Shop, OrderedProduct, Invoice
-from shoppingmall.serializers.order_serializers import OrderSerializer, OrderedProductSerializer
+from shoppingmall.serializers.order_serializers import OrderSerializer, OrderedProductSerializer, OrderDetailsSerializer
 from firebase_notify import FirebaseNotify
 from shoppingmall.serializers.shop_serializers import ShopReadSerializer
 from shoppingmall.utils.config import getNewOrderNumber, getInvoiceNumber
@@ -186,11 +186,11 @@ class OrderViewSet(viewsets.ModelViewSet):
             response = order_serializer.data
             response['shop'] = shop
 
-            # tlg = TelegramNotify()
-            # try:
-            #     tlg.send_new_order(data)
-            # except:
-            #     pass
+            tlg = TelegramNotify()
+            try:
+                tlg.send_new_order(response, shop)
+            except:
+                pass
             # try:
             #     tlg.send_sms_to_customer(data)
             # except:
@@ -298,7 +298,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             obj.save()
 
             try:
-                obj_ser = OrderSerializer(obj, context=self.get_serializer_context()).data
+                obj_ser = OrderDetailsSerializer(obj, context=self.get_serializer_context()).data
                 for orderedProduct in obj_ser['products']:
                     rProduct = Product.objects.get(pk=orderedProduct['product']['id'])
                     if not rProduct.infinite:
@@ -315,7 +315,8 @@ class OrderViewSet(viewsets.ModelViewSet):
                         else:
                             continue
 
-                # tlg.send_order_accepted_message(obj_ser_kr, obj_ser)
+                tlg = TelegramNotify()
+                tlg.send_order_accepted_message(obj_ser, obj_ser['shop'])
             except Exception as ex:
                 print(ex)
                 pass
@@ -353,11 +354,11 @@ class OrderViewSet(viewsets.ModelViewSet):
             obj = self.get_object()
             obj.payment = 'paid'
             obj.save()
-            obj_ser = OrderSerializer(obj, context=self.get_serializer_context()).data
+            obj_ser = OrderDetailsSerializer(obj, context=self.get_serializer_context()).data
             if obj_ser['type'] == 'T':
                 try:
                     tlg = TelegramNotify()
-                    # tlg.send_order_paid_message_to_users(obj_ser)
+                    tlg.send_order_paid_message_to_users(obj_ser)
                 except Exception as ex:
                     print(ex)
                     pass

@@ -98,6 +98,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class OrderDetailsSerializer(serializers.ModelSerializer):
     products = fields.SerializerMethodField(read_only=True)
+    user = fields.SerializerMethodField(read_only=True)
     shop = fields.SerializerMethodField(read_only=True)
     receipt = Base64ImageField(max_length=None, use_url=True)
 
@@ -130,6 +131,14 @@ class OrderDetailsSerializer(serializers.ModelSerializer):
     def get_shop(self, obj):
         shop = Shop.objects.get(id=obj.shop.pk)
         return ShopReadSerializer(shop, context=self.context).data
+
+    def get_user(self, obj):
+        user = User.objects.get(id=obj.user.pk)
+        if user.is_customer():
+            user = CustomerSerializer(user.customer, context=self.context).data
+            return user
+        else:
+            return obj.user
 
 
 class AdminOrderDetailSerializer(serializers.ModelSerializer):

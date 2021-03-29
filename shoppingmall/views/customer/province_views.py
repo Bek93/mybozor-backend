@@ -13,7 +13,6 @@ from shoppingmall.utils.logger import Logger
 
 
 class ProvinceViewSet(viewsets.ModelViewSet):
-    queryset = Collection.objects.all()
     serializer_class = ProvinceSerializer
     pagination_class = None
     logger = Logs()
@@ -78,8 +77,8 @@ class ProvinceViewSet(viewsets.ModelViewSet):
         return Response(response)
 
     def get_permissions(self):
-        if self.action == 'list' or self.action == 'retrieve' or self.action == 'products':
-            return [IsAuthenticated(), ]
+        if self.action == 'list' or self.action == 'retrieve':
+            return [AllowAny(), ]
         if self.action == 'create' or self.action == 'update' or self.action == 'destroy':
             print(self.action, self.request.user)
             return [IsAuthenticated(), ]

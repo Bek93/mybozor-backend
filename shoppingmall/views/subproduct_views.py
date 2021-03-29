@@ -73,7 +73,7 @@ class SubproductViewSet(viewsets.ModelViewSet):
     def products(self, request, pk=None):
         user = request.user
         try:
-            items = Product.objects.filter(subproduct=pk).distinct().order_by('pk')
+            items = Product.objects.filter(subproduct=pk, is_approved=True).distinct().order_by('pk')
             productReadSerializer = ProductReadSerializer(items, many=True, context=self.get_serializer_context())
             response = productReadSerializer.data
             Logger().d(data_string='', method=request.method, path=request.path,

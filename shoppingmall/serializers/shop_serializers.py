@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from shoppingmall.models import Shop, ShopConfig, DeliveryPolicy
-from shoppingmall.serializers import DeliveryPolicySerializer
+from shoppingmall.models import Shop, ShopConfig, DeliveryPolicy, Province
+from shoppingmall.serializers import DeliveryPolicySerializer, ProvinceSerializer
 from shoppingmall.utils.config import default_shop_config
 
 
@@ -16,7 +16,7 @@ class ShopConfigSerializer(serializers.ModelSerializer):
         model = ShopConfig
         fields = (
             'id', 'telegram_store', 'telegram_new_order',
-            'telegram_accept', 'sms_enabled', 'telegram_enabled', 'app_enabled',
+            'telegram_accept', 'sms_enabled', 'telegram_enabled', 'app_enabled', 'telegram_users',
             'date_created')
 
 
@@ -73,6 +73,7 @@ class ShopSerializer(serializers.ModelSerializer):
 class ShopReadSerializer(serializers.ModelSerializer):
     config = serializers.SerializerMethodField()
     delivery_policy = serializers.SerializerMethodField()
+    province = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -88,6 +89,11 @@ class ShopReadSerializer(serializers.ModelSerializer):
         deliveryPolicy = DeliveryPolicy.objects.filter(shop=obj.pk).order_by('pk')
         deliveryPolicy_data = DeliveryPolicySerializer(deliveryPolicy, many=True, context=self.context).data
         return deliveryPolicy_data
+
+    def get_province(self, obj):
+        province = Province.objects.get(pk=obj.province)
+        province = ProvinceSerializer(province, context=self.context).data
+        return province
 
     def get_config(self, obj):
 

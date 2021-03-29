@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager, AbstractBaseUser
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
@@ -293,6 +294,7 @@ class ShopConfig(models.Model):
     telegram_store = models.TextField(blank=True)
     telegram_new_order = models.TextField(blank=True)
     telegram_accept = models.TextField(blank=True)
+    telegram_users = ArrayField(models.CharField(max_length=20), blank=True, null=True)
     sms_enabled = models.BooleanField(default=False)
     telegram_enabled = models.BooleanField(default=False)
     app_enabled = models.BooleanField(default=False)
@@ -408,6 +410,7 @@ class Product(models.Model):
     has_option = models.BooleanField(default=False)
     banner = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
+    is_approved = models.BooleanField(default=False)
     data = models.TextField(blank=True)
     date_created = models.DateTimeField('date_created', default=timezone.now)
     date_modified = models.DateTimeField('date_modified', default=timezone.now)

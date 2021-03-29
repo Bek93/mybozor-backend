@@ -26,8 +26,11 @@ class DashboardViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False)
     def monthly_profit(self, request, *args, **kwargs):
         user = request.user
-        if user.is_seller():
-            shopId = str(user.seller.shop.id)
+        if user.is_seller() or user.is_admin():
+            if user.is_seller():
+                shopId = str(user.seller.shop.id)
+            else:
+                shopId = request.query_params['shopId']
             monthly_query = f"""SELECT 
                SUM(total_selling)                       as selling,
                SUM(total_buying)                        as buying,
@@ -72,8 +75,12 @@ class DashboardViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False)
     def daily_profit(self, request, *args, **kwargs):
         user = request.user
-        if user.is_seller():
-            shopId = str(user.seller.shop.id)
+        if user.is_seller() or user.is_admin():
+            if user.is_seller():
+                shopId = str(user.seller.shop.id)
+            else:
+                shopId = request.query_params['shopId']
+
             daily_query = f"""SELECT SUM(total_selling)                       as selling,
            SUM(total_buying)                        as buying,
            (SUM(total_selling) - SUM(total_buying)) as profit,
@@ -117,8 +124,11 @@ class DashboardViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False)
     def daily_order_count(self, request, *args, **kwargs):
         user = request.user
-        if user.is_seller():
-            shopId = str(user.seller.shop.id)
+        if user.is_seller() or user.is_admin():
+            if user.is_seller():
+                shopId = str(user.seller.shop.id)
+            else:
+                shopId = request.query_params['shopId']
             query = f"""SELECT * FROM (SELECT COUNT(*) as quantity, to_char(date_created, 'YYYY-MM-DD') as sana
              from shoppingmall_order
              where deleted=false and shop_id='{shopId}' group by sana ) as orders where sana between to_char(now() - INTERVAL '30 days', 'YYYY-MM-DD') and 
@@ -150,8 +160,11 @@ class DashboardViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False)
     def monthly_order_count(self, request, *args, **kwargs):
         user = request.user
-        if user.is_seller():
-            shopId = str(user.seller.shop.id)
+        if user.is_seller() or user.is_admin():
+            if user.is_seller():
+                shopId = str(user.seller.shop.id)
+            else:
+                shopId = request.query_params['shopId']
             query = f"""SELECT COUNT(*), to_char(date_created, 'YYYY-MM') as sana 
              from shoppingmall_order where deleted = false and shop_id='{shopId}' group by sana order by sana;
                """
@@ -181,8 +194,11 @@ class DashboardViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False)
     def order_count_by_status(self, request, *args, **kwargs):
         user = request.user
-        if user.is_seller():
-            shopId = str(user.seller.shop.id)
+        if user.is_seller() or user.is_admin():
+            if user.is_seller():
+                shopId = str(user.seller.shop.id)
+            else:
+                shopId = request.query_params['shopId']
 
             query = f"""SELECT count(*), status from shoppingmall_order where deleted=false and shop_id='{shopId}' group by status;
                    """
@@ -213,8 +229,11 @@ class DashboardViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False)
     def order_count_by_delivery_status(self, request, *args, **kwargs):
         user = request.user
-        if user.is_seller():
-            shopId = str(user.seller.shop.id)
+        if user.is_seller() or user.is_admin():
+            if user.is_seller():
+                shopId = str(user.seller.shop.id)
+            else:
+                shopId = request.query_params['shopId']
             query = f"""SELECT count(*), delivery from shoppingmall_order where deleted=false and 
             shop_id='{shopId}' and (delivery='P' or delivery='S') group by delivery;
                        """
@@ -244,8 +263,11 @@ class DashboardViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False)
     def live_time_popular_products(self, request, *args, **kwargs):
         user = request.user
-        if user.is_seller():
-            shopId = str(user.seller.shop.id)
+        if user.is_seller() or user.is_admin():
+            if user.is_seller():
+                shopId = str(user.seller.shop.id)
+            else:
+                shopId = request.query_params['shopId']
             query = f"""SELECT SUM(quantity) as quantity, product_id
                 from shoppingmall_orderedproduct where order_id in (Select id from shoppingmall_order where \
                 shop_id='{shopId}') group by product_id order by quantity desc
@@ -272,8 +294,11 @@ class DashboardViewSet(viewsets.ModelViewSet):
     def monthly_ordered_product(self, request, *args, **kwargs):
 
         user = request.user
-        if user.is_seller():
-            shopId = str(user.seller.shop.id)
+        if user.is_seller() or user.is_admin():
+            if user.is_seller():
+                shopId = str(user.seller.shop.id)
+            else:
+                shopId = request.query_params['shopId']
             query = """ SELECT * FROM (SELECT SUM(quantity) as quantity, product_id, to_char(date_created, 'YYYY-MM') as sana
                 from shoppingmall_orderedproduct group by product_id) group by sana order by sana
                    """
@@ -296,8 +321,11 @@ class DashboardViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False)
     def monthly_total_referral_fee(self, request, *args, **kwargs):
         user = request.user
-        if user.is_seller():
-            shopId = str(user.seller.shop.id)
+        if user.is_seller() or user.is_admin():
+            if user.is_seller():
+                shopId = str(user.seller.shop.id)
+            else:
+                shopId = request.query_params['shopId']
             query = f""" SELECT SUM(total_referral_fee), to_char(date_created, 'YYYY-MM') as sana
             FROM shoppingmall_order
             where shop_id = '{shopId}' group by sana;
@@ -321,8 +349,11 @@ class DashboardViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False)
     def daily_total_referral_fee(self, request, *args, **kwargs):
         user = request.user
-        if user.is_seller():
-            shopId = str(user.seller.shop.id)
+        if user.is_seller() or user.is_admin():
+            if user.is_seller():
+                shopId = str(user.seller.shop.id)
+            else:
+                shopId = request.query_params['shopId']
             query = f""" SELECT SUM(total_referral_fee), to_char(date_created, 'YYYY-MM-DD') as sana
                 FROM shoppingmall_order
                 where shop_id = '{shopId}' group by sana;
@@ -346,8 +377,11 @@ class DashboardViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False)
     def shop_view_count(self, request, *args, **kwargs):
         user = request.user
-        if user.is_seller():
-            shopId = str(user.seller.shop.id)
+        if user.is_seller() or user.is_admin():
+            if user.is_seller():
+                shopId = str(user.seller.shop.id)
+            else:
+                shopId = request.query_params['shopId']
             query = f""" SELECT COUNT(*), to_char(date_created, 'YYYY-MM-DD') as sana
                     FROM shoppingmall_shopview
                     where shop_id = '{shopId}' group by sana;
@@ -379,8 +413,11 @@ class DashboardViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False)
     def product_view_count_monthly(self, request, *args, **kwargs):
         user = request.user
-        if user.is_seller():
-            shopId = str(user.seller.shop.id)
+        if user.is_seller() or user.is_admin():
+            if user.is_seller():
+                shopId = str(user.seller.shop.id)
+            else:
+                shopId = request.query_params['shopId']
             query = f""" SELECT * FROM (SELECT COUNT(*), to_char(date_created, 'YYYY-MM') as sana, product_id
                         FROM shoppingmall_productview
                         where shop_id = '{shopId}' group by sana, product_id) as product_view where sana between to_char(now() - INTERVAL '30 days', 'YYYY-MM-DD') and 

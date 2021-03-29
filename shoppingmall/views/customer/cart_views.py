@@ -139,11 +139,12 @@ class CartViewSet(viewsets.ModelViewSet):
                     response = order_ser.data
                     response['shop'] = shop
                     order_responses.append(response)
-                    # tlg = TelegramNotify()
-                    # try:
-                    #     tlg.send_new_order(data)
-                    # except:
-                    #     pass
+                    telegram = TelegramNotify()
+                    try:
+                        telegram.send_new_order(response, shop)
+                    except Exception as ex:
+                        print(ex)
+                        pass
 
                     Logger().d(data_string='', method=request.method, path=request.path,
                                shop_id=shop['id'], user_id=user.id, payload_string=response, status_code=200)
