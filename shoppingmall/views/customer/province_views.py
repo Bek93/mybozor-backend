@@ -68,12 +68,11 @@ class ProvinceViewSet(viewsets.ModelViewSet):
             return Response(data, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def list(self, request, *args, **kwargs):
-        user = request.user
         queryset = Province.objects.all().order_by('pk')
         serializer = ProvinceSerializer(queryset, context=self.get_serializer_context(), many=True)
         response = serializer.data
         Logger().d(data_string='', method=request.method, path=request.path,
-                   shop_id='', user_id=user.id, payload_string=response, status_code=200)
+                   shop_id='', user_id=0, payload_string=response, status_code=200)
         return Response(response)
 
     def get_permissions(self):
