@@ -27,6 +27,8 @@ class CollectionSerializer(serializers.ModelSerializer):
 
 class ClassificationSerializer(serializers.ModelSerializer):
     titles = LocalizeSerializer()
+    image_tg = Base64ImageField(max_length=None, use_url=True)
+    image_app = Base64ImageField(max_length=None, use_url=True)
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -34,7 +36,7 @@ class ClassificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Classification
-        fields = ('id', 'titles', 'is_active', 'referral_rate', 'date_created')
+        fields = ('id', 'titles', 'is_active', 'referral_rate', 'image_tg', 'image_app', 'date_created')
         ordering = ['-date_created']
 
     def create(self, validated_data):
@@ -55,6 +57,8 @@ class ClassificationSerializer(serializers.ModelSerializer):
 
 class CategorySerializer(serializers.ModelSerializer):
     titles = LocalizeSerializer()
+    image_tg = Base64ImageField(max_length=None, use_url=True)
+    image_app = Base64ImageField(max_length=None, use_url=True)
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -62,7 +66,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ('id', 'classification', 'titles', 'is_active', 'date_created')
+        fields = ('id', 'classification', 'titles', 'is_active', 'image_tg', 'image_app', 'date_created')
         ordering = ['-date_created']
 
     def create(self, validated_data):
@@ -85,6 +89,8 @@ class CategorySerializer(serializers.ModelSerializer):
 class ReadCategorySerializer(serializers.ModelSerializer):
     titles = LocalizeSerializer()
     classification = ClassificationSerializer()
+    image_tg = Base64ImageField(max_length=None, use_url=True)
+    image_app = Base64ImageField(max_length=None, use_url=True)
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -92,13 +98,15 @@ class ReadCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ('id', 'classification', 'titles', 'is_active', 'date_created')
+        fields = ('id', 'classification', 'titles', 'is_active', 'image_tg', 'image_app', 'date_created')
         ordering = ['-date_created']
 
 
 class ReadClassificationSerializer(serializers.ModelSerializer):
     titles = LocalizeSerializer()
     categories = ReadCategorySerializer(many=True)
+    image_tg = Base64ImageField(max_length=None, use_url=True)
+    image_app = Base64ImageField(max_length=None, use_url=True)
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -106,7 +114,7 @@ class ReadClassificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Classification
-        fields = ('id', 'titles', 'is_active', 'referral_rate', 'categories', 'date_created')
+        fields = ('id', 'titles', 'is_active', 'referral_rate', 'categories', 'image_tg', 'image_app', 'date_created')
         ordering = ['-date_created']
 
     def create(self, validated_data):
@@ -127,6 +135,8 @@ class ReadClassificationSerializer(serializers.ModelSerializer):
 
 class SubproductSerializer(serializers.ModelSerializer):
     titles = LocalizeSerializer()
+    image_tg = Base64ImageField(max_length=None, use_url=True)
+    image_app = Base64ImageField(max_length=None, use_url=True)
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -134,7 +144,7 @@ class SubproductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subproduct
-        fields = ('id', 'category', 'titles', 'is_active', 'date_created')
+        fields = ('id', 'category', 'titles', 'is_active', 'image_tg', 'image_app', 'date_created')
         ordering = ['-date_created']
 
     def create(self, validated_data):
@@ -156,6 +166,8 @@ class SubproductSerializer(serializers.ModelSerializer):
 class ReadSubproductSerializer(serializers.ModelSerializer):
     titles = LocalizeSerializer()
     category = ReadCategorySerializer()
+    image_tg = Base64ImageField(max_length=None, use_url=True)
+    image_app = Base64ImageField(max_length=None, use_url=True)
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -163,7 +175,7 @@ class ReadSubproductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subproduct
-        fields = ('id', 'category', 'titles', 'is_active', 'date_created')
+        fields = ('id', 'category', 'titles', 'is_active', 'image_tg', 'image_app', 'date_created')
         ordering = ['-date_created']
 
 

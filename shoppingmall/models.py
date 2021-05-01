@@ -212,6 +212,11 @@ def shop_photo_directory_path(instance, filename):
     return 'shop_{}/{}'.format(instance.shop.id, filename)
 
 
+def category_photo_directory_path(instance, filename):
+    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
+    return 'category/{}'.format(instance.shop.id, filename)
+
+
 class User(AbstractBaseUser):
     is_active = models.BooleanField('active', default=True, help_text=(
         'Designates whether this user should be treated as '
@@ -341,6 +346,8 @@ class Classification(models.Model):
     titles = models.ForeignKey(Localize, on_delete=models.SET_NULL, null=True)
     is_active = models.BooleanField(default=True)
     referral_rate = models.FloatField(default=0.0)
+    image_tg = models.ImageField(null=True, upload_to=category_photo_directory_path)
+    image_app = models.ImageField(null=True, upload_to=category_photo_directory_path)
     date_created = models.DateTimeField('date_created', default=timezone.now)
 
 
@@ -348,6 +355,8 @@ class Category(models.Model):
     id = models.AutoField(primary_key=True)
     classification = models.ForeignKey(Classification, on_delete=models.SET_NULL, null=True)
     titles = models.ForeignKey(Localize, on_delete=models.SET_NULL, null=True)
+    image_tg = models.ImageField(null=True, upload_to=category_photo_directory_path)
+    image_app = models.ImageField(null=True, upload_to=category_photo_directory_path)
     is_active = models.BooleanField(default=True)
     date_created = models.DateTimeField('date_created', default=timezone.now)
 
@@ -356,6 +365,8 @@ class Subproduct(models.Model):
     id = models.AutoField(primary_key=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
     titles = models.ForeignKey(Localize, on_delete=models.SET_NULL, null=True)
+    image_tg = models.ImageField(null=True, upload_to=category_photo_directory_path)
+    image_app = models.ImageField(null=True, upload_to=category_photo_directory_path)
     is_active = models.BooleanField(default=True)
     date_created = models.DateTimeField('date_created', default=timezone.now)
 
