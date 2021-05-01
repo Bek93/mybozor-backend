@@ -21,7 +21,7 @@ class ClassificationViewSet(viewsets.ModelViewSet):
         data = request.data
         user = request.user
         if user.is_admin():
-            serializer = ClassificationSerializer(data=data)
+            serializer = ClassificationSerializer(data=data, context=self.get_serializer_context())
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
             response = serializer.data

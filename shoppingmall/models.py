@@ -214,7 +214,7 @@ def shop_photo_directory_path(instance, filename):
 
 def category_photo_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
-    return 'category/{}'.format(instance.shop.id, filename)
+    return 'category/{}'.format(filename)
 
 
 class User(AbstractBaseUser):
