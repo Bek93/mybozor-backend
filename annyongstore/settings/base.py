@@ -78,7 +78,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:8008',
-    'http://167.99.3.253:8008',
+    'http://167.99.150.219:8008',
 )
 
 REST_FRAMEWORK = {

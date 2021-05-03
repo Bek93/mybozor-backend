@@ -56,6 +56,7 @@ class MemberSerializer(serializers.ModelSerializer):
 class CustomerSerializer(serializers.ModelSerializer):
     province = ProvinceSerializer(read_only=True)
     province_id = serializers.IntegerField(write_only=True)
+    address_image = Base64ImageField(max_length=None, use_url=True)
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
