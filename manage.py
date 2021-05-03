@@ -4,6 +4,8 @@ import os
 import sys
 
 
+sys.path.insert(0, '../')
+
 def main():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'annyongstore.settings.development')
     try:
