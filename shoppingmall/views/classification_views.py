@@ -99,7 +99,7 @@ class ClassificationViewSet(viewsets.ModelViewSet):
                 response = serializer.data
                 Logger().d(data_string='', method=request.method, path=request.path,
                            shop_id=kwargs['pk'], user_id=user.id, payload_string=response, status_code=200)
-                return Response(request.data)
+                return Response(response)
             except Exception as err:
                 Logger().d(data_string='', method=request.method, path=request.path,
                            shop_id=kwargs['pk'], user_id=user.id, payload_string=str(err), status_code=400)

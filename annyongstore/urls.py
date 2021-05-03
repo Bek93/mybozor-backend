@@ -27,7 +27,17 @@ urlpatterns = [
     path('v1/auth-token/', obtain_jwt_token),
     path('v1/refresh-token/', refresh_jwt_token),
 ]
-urlpatterns += static(settings.MEDIA_URL,
-                      document_root=settings.MEDIA_ROOT)
-urlpatterns += static(settings.STATIC_URL,
-                      document_root=settings.STATIC_ROOT)
+# urlpatterns += static(settings.MEDIA_URL,
+#                       document_root=settings.MEDIA_ROOT)
+# urlpatterns += static(settings.STATIC_URL,
+#                       document_root=settings.STATIC_ROOT)
+
+
+if settings.DEBUG:
+    import debug_toolbar
+
+    urlpatterns += [path('__debug__/', include(debug_toolbar.urls))]
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL,
+                          document_root=settings.STATIC_ROOT)

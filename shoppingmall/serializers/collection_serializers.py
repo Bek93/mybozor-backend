@@ -48,7 +48,6 @@ class ClassificationSerializer(serializers.ModelSerializer):
 
         try:
             classification = Classification.objects.create(**validated_data)
-            classification.save()
         except ValidationError as err:
             raise ValidationError(err)
 
